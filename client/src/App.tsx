@@ -1,0 +1,43 @@
+import { Routes, Route } from 'react-router-dom';
+import Navbar from '@/components/Navbar';
+import HomePage from '@/pages/HomePage';
+import LoginPage from '@/pages/LoginPage';
+import SignupPage from '@/pages/SignupPage';
+import VerifyEmailPage from '@/pages/VerifyEmailPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import BoardListPage from '@/pages/BoardListPage';
+import BoardDetailPage from '@/pages/BoardDetailPage';
+import NewBoardPage from '@/pages/NewBoardPage';
+import ChatbotPage from '@/pages/ChatbotPage';
+
+export default function App() {
+  return (
+    <div className="min-h-screen bg-[var(--bg)] text-ink-900">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[480px] bg-hero-radial -z-0" />
+      <Navbar />
+      <main className="relative max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/board" element={<BoardListPage />} />
+          <Route path="/board/new" element={<NewBoardPage />} />
+          <Route path="/board/:id" element={<BoardDetailPage />} />
+          <Route path="/chatbot" element={<ChatbotPage />} />
+          <Route
+            path="*"
+            element={
+              <div className="card p-10 text-center text-ink-500">
+                페이지를 찾을 수 없습니다.
+              </div>
+            }
+          />
+        </Routes>
+      </main>
+    </div>
+  );
+}

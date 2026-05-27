@@ -1,0 +1,35 @@
+# ===== Secrets =====
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ===== Server (Spring Boot / Gradle) =====
+server/build/
+server/.gradle/
+server/out/
+server/bin/
+
+# ===== Client (Vite / Node) =====
+client/node_modules/
+client/dist/
+client/.vite/
+client/*.tsbuildinfo
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

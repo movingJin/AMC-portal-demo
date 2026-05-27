@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: amc-portal
+  # .env 는 me.paulschwarz:spring-dotenv 가 자동 로드.
+  # DATABASE_URL (libpq 형식) 은 DatabaseUrlEnvPostProcessor 가
+  # spring.datasource.{url,username,password} 로 분해해 주입.
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-init-sql: SET search_path TO portal, public
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: portal
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${SENDER_EMAIL}
+    password: ${SENDER_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8080
+  error:
+    include-message: always
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.backend.amc_portal: DEBUG
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:}
+    access-token-ttl-seconds: 1800
+    refresh-token-ttl-seconds: 1209600
+  auth:
+    require-email-verification: true
+    email-verification-ttl-seconds: 600
+    password-reset-ttl-seconds: 1800
+    reset-link-base: ${RESET_LINK_BASE:http://localhost:3000/reset-password}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+  nl2sql:
+    base-url: ${NL2SQL_BASE_URL:https://amc-portal.movingjin.com}
+    api-keys: ${NL2SQL_API_KEYS}
+    timeout-seconds: 60
+  azure:
+    openai:
+      api-key: ${AZURE_OPENAI_API_KEY}
+      endpoint: ${AZURE_OPENAI_ENDPOINT}
+      deployment: ${AZURE_OPENAI_DEPLOYMENT_NAME}
+      model: ${AZURE_OPENAI_MODEL_NAME:gpt-4o}
+      embedding-deployment: ${AZURE_OPENAI_EMBEDDING:}

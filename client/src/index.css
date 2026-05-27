@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #f7f8fb;
+    --fg: #0f172a;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    color: var(--fg);
+    background-color: var(--bg);
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  *::selection {
+    background-color: rgba(63, 96, 255, 0.18);
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-ink-200/70 rounded-2xl shadow-soft;
+  }
+  .card-hover {
+    @apply transition duration-200 hover:shadow-card hover:-translate-y-0.5 hover:border-ink-200;
+  }
+
+  .input {
+    @apply w-full bg-white border border-ink-200 rounded-lg px-3.5 py-2.5 text-sm text-ink-900
+           placeholder:text-ink-400 transition
+           focus:outline-none focus:border-brand-500 focus:shadow-ring;
+  }
+  .textarea {
+    @apply input min-h-[120px] resize-y leading-relaxed;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium
+           transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none
+           focus:outline-none focus-visible:shadow-ring;
+  }
+  .btn-primary {
+    @apply btn bg-brand-gradient text-white shadow-soft hover:brightness-110;
+  }
+  .btn-secondary {
+    @apply btn bg-white border border-ink-200 text-ink-700 hover:bg-ink-50 hover:border-ink-300;
+  }
+  .btn-ghost {
+    @apply btn text-ink-600 hover:bg-ink-100;
+  }
+  .btn-danger {
+    @apply btn border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+           bg-ink-100 text-ink-600 border border-ink-200/60;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-ink-600 mb-1.5;
+  }
+
+  .divider {
+    @apply h-px bg-ink-200/70;
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-ink-100 rounded;
+  }
+}
+
+/* AG Grid theming tweaks to match design system */
+.ag-theme-quartz {
+  --ag-font-family: inherit;
+  --ag-font-size: 13px;
+  --ag-foreground-color: #0f172a;
+  --ag-header-foreground-color: #475569;
+  --ag-background-color: #ffffff;
+  --ag-header-background-color: #f8fafc;
+  --ag-odd-row-background-color: #fcfdff;
+  --ag-row-hover-color: #f1f5ff;
+  --ag-border-color: #e2e8f0;
+  --ag-borders: solid 1px;
+  --ag-border-radius: 12px;
+  --ag-cell-horizontal-padding: 14px;
+  --ag-grid-size: 6px;
+}
