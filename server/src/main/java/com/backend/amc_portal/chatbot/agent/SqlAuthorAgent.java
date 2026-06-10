@@ -6,30 +6,30 @@ import com.backend.amc_portal.chatbot.dto.SchemaBrief;
 import com.backend.amc_portal.chatbot.dto.SqlAuthorResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 /**
- * Sub-agent: SchemaBrief 기반 PostgreSQL SELECT 작성.
- * 도구 없음 (순수 추론). 결과는 3-블록 마크다운 또는 "## VALUE_UNCONFIRMED" 반려.
+ * Sub-agent: SchemaBrief 기반 PostgreSQL SELECT 작성. 도구 없음 (순수 추론). 결과는 3-블록 마크다운 또는 "##
+ * VALUE_UNCONFIRMED" 반려.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SqlAuthorAgent {
 
-    private final AzureOpenAiClient azureClient;
-    private final ObjectMapper om;
+  private final AzureOpenAiClient azureClient;
+  private final ObjectMapper om;
 
-    private static final String SYSTEM_PROMPT = """
+  private static final String SYSTEM_PROMPT =
+      """
             당신은 PostgreSQL **SELECT 쿼리 작성 전문가** 입니다. 도구는 없습니다.
             입력으로 받은 schema_brief 와 question 만 보고 단일 SELECT 문 + SchemaCitation 을 반환합니다.
 
@@ -96,92 +96,90 @@ public class SqlAuthorAgent {
             - value_anchors 없이 리터럴 값을 WHERE 에 박지 말 것 (가장 흔한 환각 경로).
             """;
 
-    public SqlAuthorResult write(String question, SchemaBrief brief, PriorError priorError) {
-        Map<String, Object> input = new LinkedHashMap<>();
-        input.put("question", question);
-        input.put("schema_brief", brief);
-        if (priorError != null) input.put("prior_error", priorError);
+  public SqlAuthorResult write(String question, SchemaBrief brief, PriorError priorError) {
+    Map<String, Object> input = new LinkedHashMap<>();
+    input.put("question", question);
+    input.put("schema_brief", brief);
+    if (priorError != null) input.put("prior_error", priorError);
 
-        String userContent;
-        try {
-            userContent = om.writeValueAsString(input);
-        } catch (Exception e) {
-            userContent = question;
-        }
-
-        List<Map<String, Object>> messages = List.of(
-                Map.of("role", "system", "content", SYSTEM_PROMPT),
-                Map.of("role", "user", "content", userContent)
-        );
-
-        JsonNode resp = azureClient.chatCompletion(messages, null);
-        String content = resp.path("choices").path(0).path("message").path("content").asText("");
-        return parseAuthorResult(content);
+    String userContent;
+    try {
+      userContent = om.writeValueAsString(input);
+    } catch (Exception e) {
+      userContent = question;
     }
 
-    private SqlAuthorResult parseAuthorResult(String content) {
-        String trimmed = content == null ? "" : content.trim();
-        if (trimmed.contains("## VALUE_UNCONFIRMED")) {
-            return parseValueUnconfirmed(trimmed);
-        }
+    List<Map<String, Object>> messages =
+        List.of(
+            Map.of("role", "system", "content", SYSTEM_PROMPT),
+            Map.of("role", "user", "content", userContent));
 
-        String intent = extractBlock(trimmed, "## 의도", "## SchemaCitation");
-        String citation = extractBlock(trimmed, "## SchemaCitation", "## SQL");
-        String sql = extractSql(trimmed);
+    JsonNode resp = azureClient.chatCompletion(messages, null);
+    String content = resp.path("choices").path(0).path("message").path("content").asText("");
+    return parseAuthorResult(content);
+  }
 
-        if (sql == null || sql.isBlank()) {
-            return new SqlAuthorResult.SchemaInsufficient(
-                    "sql-author 응답에서 SQL 블록을 찾지 못함: " + abbreviate(trimmed));
-        }
-        return new SqlAuthorResult.Authored(
-                intent != null ? intent.trim() : "",
-                citation != null ? citation.trim() : "",
-                sql.trim()
-        );
+  private SqlAuthorResult parseAuthorResult(String content) {
+    String trimmed = content == null ? "" : content.trim();
+    if (trimmed.contains("## VALUE_UNCONFIRMED")) {
+      return parseValueUnconfirmed(trimmed);
     }
 
-    private SqlAuthorResult.ValueUnconfirmed parseValueUnconfirmed(String content) {
-        String value = matchFirst(content, Pattern.compile("값:\\s*\"([^\"]+)\""));
-        if (value == null) value = matchFirst(content, Pattern.compile("값:\\s*'([^']+)'"));
-        if (value == null) value = "";
+    String intent = extractBlock(trimmed, "## 의도", "## SchemaCitation");
+    String citation = extractBlock(trimmed, "## SchemaCitation", "## SQL");
+    String sql = extractSql(trimmed);
 
-        String candStr = matchFirst(content, Pattern.compile("후보 컬럼:\\s*\\[([^\\]]+)\\]"));
-        List<String> candidates = new ArrayList<>();
-        if (candStr != null) {
-            for (String c : candStr.split(",")) {
-                String t = c.trim();
-                if (!t.isEmpty()) candidates.add(t);
-            }
-        }
-        return new SqlAuthorResult.ValueUnconfirmed(value, candidates, content);
+    if (sql == null || sql.isBlank()) {
+      return new SqlAuthorResult.SchemaInsufficient(
+          "sql-author 응답에서 SQL 블록을 찾지 못함: " + abbreviate(trimmed));
     }
+    return new SqlAuthorResult.Authored(
+        intent != null ? intent.trim() : "", citation != null ? citation.trim() : "", sql.trim());
+  }
 
-    private String extractBlock(String content, String startMarker, String endMarker) {
-        int s = content.indexOf(startMarker);
-        if (s < 0) return null;
-        int after = s + startMarker.length();
-        int e = content.indexOf(endMarker, after);
-        return (e < 0 ? content.substring(after) : content.substring(after, e));
-    }
+  private SqlAuthorResult.ValueUnconfirmed parseValueUnconfirmed(String content) {
+    String value = matchFirst(content, Pattern.compile("값:\\s*\"([^\"]+)\""));
+    if (value == null) value = matchFirst(content, Pattern.compile("값:\\s*'([^']+)'"));
+    if (value == null) value = "";
 
-    private String extractSql(String content) {
-        Matcher m = Pattern.compile("```(?:sql)?\\s*(.+?)```", Pattern.DOTALL).matcher(content);
-        if (m.find()) return m.group(1);
-        // fenceless fallback
-        int idx = content.indexOf("## SQL");
-        if (idx >= 0) {
-            String tail = content.substring(idx + "## SQL".length()).trim();
-            if (tail.toUpperCase().startsWith("SELECT") || tail.toUpperCase().startsWith("WITH")) return tail;
-        }
-        return null;
+    String candStr = matchFirst(content, Pattern.compile("후보 컬럼:\\s*\\[([^\\]]+)\\]"));
+    List<String> candidates = new ArrayList<>();
+    if (candStr != null) {
+      for (String c : candStr.split(",")) {
+        String t = c.trim();
+        if (!t.isEmpty()) candidates.add(t);
+      }
     }
+    return new SqlAuthorResult.ValueUnconfirmed(value, candidates, content);
+  }
 
-    private String matchFirst(String content, Pattern pattern) {
-        Matcher m = pattern.matcher(content);
-        return m.find() ? m.group(1) : null;
-    }
+  private String extractBlock(String content, String startMarker, String endMarker) {
+    int s = content.indexOf(startMarker);
+    if (s < 0) return null;
+    int after = s + startMarker.length();
+    int e = content.indexOf(endMarker, after);
+    return (e < 0 ? content.substring(after) : content.substring(after, e));
+  }
 
-    private String abbreviate(String s) {
-        return s.length() > 200 ? s.substring(0, 200) + "..." : s;
+  private String extractSql(String content) {
+    Matcher m = Pattern.compile("```(?:sql)?\\s*(.+?)```", Pattern.DOTALL).matcher(content);
+    if (m.find()) return m.group(1);
+    // fenceless fallback
+    int idx = content.indexOf("## SQL");
+    if (idx >= 0) {
+      String tail = content.substring(idx + "## SQL".length()).trim();
+      if (tail.toUpperCase().startsWith("SELECT") || tail.toUpperCase().startsWith("WITH"))
+        return tail;
     }
+    return null;
+  }
+
+  private String matchFirst(String content, Pattern pattern) {
+    Matcher m = pattern.matcher(content);
+    return m.find() ? m.group(1) : null;
+  }
+
+  private String abbreviate(String s) {
+    return s.length() > 200 ? s.substring(0, 200) + "..." : s;
+  }
 }

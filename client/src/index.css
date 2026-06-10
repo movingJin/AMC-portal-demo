@@ -8,7 +8,9 @@
     --fg: #0f172a;
   }
 
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
   }
 

@@ -4,27 +4,24 @@ import com.backend.amc_portal.chatbot.client.AzureOpenAiClient;
 import com.backend.amc_portal.chatbot.dto.SqlExecutorResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-/**
- * Sub-agent: 결과를 사용자에게 보여줄 한국어 마크다운으로 합성.
- * 도구 없음.
- */
+/** Sub-agent: 결과를 사용자에게 보여줄 한국어 마크다운으로 합성. 도구 없음. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ResponseComposerAgent {
 
-    private final AzureOpenAiClient azureClient;
-    private final ObjectMapper om;
+  private final AzureOpenAiClient azureClient;
+  private final ObjectMapper om;
 
-    private static final String SYSTEM_PROMPT = """
+  private static final String SYSTEM_PROMPT =
+      """
             당신은 NL2SQL 결과의 **응답 작가** 입니다. 도구는 없습니다.
 
             입력으로 사용자의 질문, 실행된 SQL, 실행 결과(컬럼/행), 주의사항(caveats) 을 받습니다.
@@ -56,31 +53,35 @@ public class ResponseComposerAgent {
             - 결과에 없는 숫자/행 인용 금지.
             """;
 
-    public String compose(String question, SqlExecutorResult.Ok result, List<String> caveats) {
-        Map<String, Object> input = new LinkedHashMap<>();
-        input.put("question", question);
-        input.put("final_sql", result.executedSql());
-        input.put("execution_result", Map.of(
-                "row_count", result.rowCount(),
-                "columns", result.columns(),
-                "rows", truncateRows(result.rows(), 20)
-        ));
-        if (caveats != null && !caveats.isEmpty()) input.put("caveats", caveats);
+  public String compose(String question, SqlExecutorResult.Ok result, List<String> caveats) {
+    Map<String, Object> input = new LinkedHashMap<>();
+    input.put("question", question);
+    input.put("final_sql", result.executedSql());
+    input.put(
+        "execution_result",
+        Map.of(
+            "row_count", result.rowCount(),
+            "columns", result.columns(),
+            "rows", truncateRows(result.rows(), 20)));
+    if (caveats != null && !caveats.isEmpty()) input.put("caveats", caveats);
 
-        String content;
-        try { content = om.writeValueAsString(input); }
-        catch (Exception e) { content = question; }
-
-        List<Map<String, Object>> messages = List.of(
-                Map.of("role", "system", "content", SYSTEM_PROMPT),
-                Map.of("role", "user", "content", content)
-        );
-
-        JsonNode resp = azureClient.chatCompletion(messages, null);
-        return resp.path("choices").path(0).path("message").path("content").asText("");
+    String content;
+    try {
+      content = om.writeValueAsString(input);
+    } catch (Exception e) {
+      content = question;
     }
 
-    private List<List<Object>> truncateRows(List<List<Object>> rows, int limit) {
-        return rows.size() <= limit ? rows : rows.subList(0, limit);
-    }
+    List<Map<String, Object>> messages =
+        List.of(
+            Map.of("role", "system", "content", SYSTEM_PROMPT),
+            Map.of("role", "user", "content", content));
+
+    JsonNode resp = azureClient.chatCompletion(messages, null);
+    return resp.path("choices").path(0).path("message").path("content").asText("");
+  }
+
+  private List<List<Object>> truncateRows(List<List<Object>> rows, int limit) {
+    return rows.size() <= limit ? rows : rows.subList(0, limit);
+  }
 }

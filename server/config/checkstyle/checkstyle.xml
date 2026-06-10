@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+  "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+  "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  AMC Portal — Checkstyle 규칙.
+
+  [실용 룰셋] 기존 코드가 100% 통과하는 고가치 규칙만 우선 enforce 한다.
+  아래 "정리 후 활성화" 블록은 기존 코드에 위반이 남아 있어 비활성화해 둔 것.
+  코드 정리(중괄호 추가 / star import 제거 / 긴 메서드 분리)가 끝나면 주석을 풀어 강화할 것.
+  포맷(들여쓰기/줄바꿈/공백)은 Spotless(google-java-format)가 담당하므로 여기서 다루지 않는다.
+-->
+<module name="Checker">
+	<property name="charset" value="UTF-8"/>
+	<property name="severity" value="error"/>
+
+	<!-- 줄 길이: 이메일 템플릿 등 끊기 어려운 문자열을 고려해 160 -->
+	<module name="LineLength">
+		<property name="max" value="160"/>
+		<property name="ignorePattern" value="^import|^package|https?://"/>
+	</module>
+
+	<module name="TreeWalker">
+		<!-- 네이밍 규칙 -->
+		<module name="PackageName">
+			<property name="format" value="^com\.backend\.amc_portal(\.[a-z][a-z0-9_]*)*$"/>
+		</module>
+		<module name="TypeName"/>
+		<module name="MethodName"/>
+		<module name="LocalVariableName"/>
+		<module name="MemberName"/>
+		<module name="ConstantName"/>
+
+		<!-- import 위생 (Spotless 가 미사용 import 제거) -->
+		<module name="UnusedImports"/>
+		<module name="RedundantImport"/>
+
+		<!-- 빈 블록 금지 -->
+		<module name="EmptyBlock"/>
+
+		<!-- ───── 정리 후 활성화 (현재 기존 코드에 위반 존재) ─────
+		<module name="AvoidStarImport"/>
+		<module name="NeedBraces"/>
+		<module name="MethodLength">
+			<property name="max" value="80"/>
+		</module>
+		-->
+	</module>
+
+	<!-- 정리 후 활성화: ChatbotService(614줄) 분리 후 켤 것
+	<module name="FileLength">
+		<property name="max" value="500"/>
+	</module>
+	-->
+</module>

@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ChatbotController {
 
-    private final ChatbotService chatbotService;
+  private final ChatbotService chatbotService;
 
-    @PostMapping("/ask")
-    public ApiResponse<ChatResponse> ask(@Valid @RequestBody ChatRequest req) {
-        return ApiResponse.ok(chatbotService.ask(req));
-    }
+  @PostMapping("/ask")
+  public ApiResponse<ChatResponse> ask(@Valid @RequestBody ChatRequest req) {
+    return ApiResponse.ok(chatbotService.ask(req));
+  }
 }

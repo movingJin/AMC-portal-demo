@@ -14,28 +14,30 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Comment extends BaseTimeEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "board_id", nullable = false)
-    private Board board;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "board_id", nullable = false)
+  private Board board;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "author_id", nullable = false)
+  private User author;
 
-    @Lob
-    @Column(nullable = false, columnDefinition = "text")
-    private String content;
+  @Lob
+  @Column(nullable = false, columnDefinition = "text")
+  private String content;
 
-    @Builder
-    public Comment(Board board, User author, String content) {
-        this.board = board;
-        this.author = author;
-        this.content = content;
-    }
+  @Builder
+  public Comment(Board board, User author, String content) {
+    this.board = board;
+    this.author = author;
+    this.content = content;
+  }
 
-    public void updateContent(String content) { this.content = content; }
+  public void updateContent(String content) {
+    this.content = content;
+  }
 }

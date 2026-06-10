@@ -2,6 +2,8 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.14'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.diffplug.spotless' version '6.25.0'
+	id 'checkstyle'
 }
 
 group = 'com.backend'
@@ -81,4 +83,31 @@ tasks.withType(JavaCompile).configureEach {
 }
 clean {
 	delete file(generated)
+}
+
+// ── 코드 스타일/정적 검사 ──────────────────────────────────────────
+spotless {
+	java {
+		target 'src/**/*.java'
+		targetExclude "${buildDir}/generated/**"   // QueryDSL Q클래스 제외
+		googleJavaFormat('1.24.0')
+		removeUnusedImports()
+		trimTrailingWhitespace()
+		endWithNewline()
+	}
+}
+
+checkstyle {
+	toolVersion = '10.20.1'
+	configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+	maxWarnings = 0
+}
+tasks.named('checkstyleMain') {
+	// QueryDSL 생성 코드(build/generated) 제외 — 손으로 쓴 소스만 검사
+	source = 'src/main/java'
+}
+
+// check(→ build) 라이프사이클에 검사 연결
+tasks.named('check') {
+	dependsOn 'spotlessCheck', 'checkstyleMain'
 }

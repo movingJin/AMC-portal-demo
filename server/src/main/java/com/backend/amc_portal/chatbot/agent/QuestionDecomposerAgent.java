@@ -4,27 +4,24 @@ import com.backend.amc_portal.chatbot.client.AzureOpenAiClient;
 import com.backend.amc_portal.chatbot.dto.QuestionDecomposition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-/**
- * NL2SQL 메인 오케스트레이터의 "단계 1: 질문 분해" 책임을 LLM 호출로 수행.
- * (스펙상으로는 메인의 내부 사고이나, Java 메인에서는 LLM 호출로 구현.)
- */
+/** NL2SQL 메인 오케스트레이터의 "단계 1: 질문 분해" 책임을 LLM 호출로 수행. (스펙상으로는 메인의 내부 사고이나, Java 메인에서는 LLM 호출로 구현.) */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class QuestionDecomposerAgent {
 
-    private final AzureOpenAiClient azureClient;
-    private final ObjectMapper om;
+  private final AzureOpenAiClient azureClient;
+  private final ObjectMapper om;
 
-    private static final String SYSTEM_PROMPT = """
+  private static final String SYSTEM_PROMPT =
+      """
             당신은 NL2SQL 시스템의 질문 분해기입니다. 사용자의 한국어 질문에서 다음 두 가지를 추출하세요:
 
             1. **도메인 키워드** (최대 3개, 가장 변별력 있는 것부터): 테이블/주제를 찾기 위한 명사
@@ -48,30 +45,31 @@ public class QuestionDecomposerAgent {
             {"keywords": ["..."], "value_lookups": ["..."]}
             """;
 
-    public QuestionDecomposition decompose(String question) {
-        List<Map<String, Object>> messages = List.of(
-                Map.of("role", "system", "content", SYSTEM_PROMPT),
-                Map.of("role", "user", "content", question)
-        );
-        JsonNode resp = azureClient.chatCompletion(messages, null, true);
-        String content = resp.path("choices").path(0).path("message").path("content").asText("");
-        try {
-            JsonNode parsed = om.readTree(content);
-            List<String> keywords = readStringList(parsed.path("keywords"));
-            List<String> values = readStringList(parsed.path("value_lookups"));
-            return new QuestionDecomposition(keywords, values);
-        } catch (Exception e) {
-            log.warn("decompose JSON parse failed; raw='{}'", content, e);
-            return new QuestionDecomposition(List.of(question), List.of());
-        }
+  public QuestionDecomposition decompose(String question) {
+    List<Map<String, Object>> messages =
+        List.of(
+            Map.of("role", "system", "content", SYSTEM_PROMPT),
+            Map.of("role", "user", "content", question));
+    JsonNode resp = azureClient.chatCompletion(messages, null, true);
+    String content = resp.path("choices").path(0).path("message").path("content").asText("");
+    try {
+      JsonNode parsed = om.readTree(content);
+      List<String> keywords = readStringList(parsed.path("keywords"));
+      List<String> values = readStringList(parsed.path("value_lookups"));
+      return new QuestionDecomposition(keywords, values);
+    } catch (Exception e) {
+      log.warn("decompose JSON parse failed; raw='{}'", content, e);
+      return new QuestionDecomposition(List.of(question), List.of());
     }
+  }
 
-    private List<String> readStringList(JsonNode arr) {
-        List<String> out = new ArrayList<>();
-        if (arr.isArray()) for (JsonNode n : arr) {
-            String s = n.asText("");
-            if (!s.isBlank()) out.add(s);
-        }
-        return out;
-    }
+  private List<String> readStringList(JsonNode arr) {
+    List<String> out = new ArrayList<>();
+    if (arr.isArray())
+      for (JsonNode n : arr) {
+        String s = n.asText("");
+        if (!s.isBlank()) out.add(s);
+      }
+    return out;
+  }
 }

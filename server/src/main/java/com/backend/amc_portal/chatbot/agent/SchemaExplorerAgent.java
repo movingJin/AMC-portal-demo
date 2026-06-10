@@ -5,38 +5,37 @@ import com.backend.amc_portal.chatbot.client.Nl2SqlClient;
 import com.backend.amc_portal.chatbot.dto.SchemaBrief;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 /**
- * Sub-agent: 한 키워드(또는 후보 테이블) 에 대한 스키마 탐색 + value_anchors 확인.
- * 도구: search_tables, get_table_schema, get_sample_rows  (execute_sql 금지)
- * 출력: SchemaBrief JSON
+ * Sub-agent: 한 키워드(또는 후보 테이블) 에 대한 스키마 탐색 + value_anchors 확인. 도구: search_tables, get_table_schema,
+ * get_sample_rows (execute_sql 금지) 출력: SchemaBrief JSON
  *
- * 호출별로 독립된 LLM 컨텍스트 — 메인 컨텍스트에는 SchemaBrief 만 반환됨.
+ * <p>호출별로 독립된 LLM 컨텍스트 — 메인 컨텍스트에는 SchemaBrief 만 반환됨.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SchemaExplorerAgent {
 
-    private final AzureOpenAiClient azureClient;
-    private final Nl2SqlClient nl2SqlClient;
-    private final ObjectMapper om;
-    private final @Qualifier("subAgentExecutor") Executor executor;
+  private final AzureOpenAiClient azureClient;
+  private final Nl2SqlClient nl2SqlClient;
+  private final ObjectMapper om;
+  private final @Qualifier("subAgentExecutor") Executor executor;
 
-    private static final int MAX_TOOL_ITERATIONS = 8;
+  private static final int MAX_TOOL_ITERATIONS = 8;
 
-    private static final String SYSTEM_PROMPT = """
+  private static final String SYSTEM_PROMPT =
+      """
             당신은 amc_portal PostgreSQL 의 **스키마 탐색 전문가** 입니다. 도구는 search_tables /
             get_table_schema / get_sample_rows 세 가지뿐이며, SQL 실행 도구는 없습니다.
             입력으로 받은 도메인 키워드(또는 후보 테이블) 1개에 대해 탐색을 수행하고,
@@ -109,271 +108,292 @@ public class SchemaExplorerAgent {
             }
             """;
 
-    /** 비동기 호출 — 메인이 여러 인스턴스를 병렬로 호출. */
-    public CompletableFuture<SchemaBrief> exploreAsync(ExploreRequest req) {
-        return CompletableFuture.supplyAsync(() -> explore(req), executor);
+  /** 비동기 호출 — 메인이 여러 인스턴스를 병렬로 호출. */
+  public CompletableFuture<SchemaBrief> exploreAsync(ExploreRequest req) {
+    return CompletableFuture.supplyAsync(() -> explore(req), executor);
+  }
+
+  public SchemaBrief explore(ExploreRequest req) {
+    try {
+      return runToolLoop(req);
+    } catch (Exception e) {
+      log.warn("SchemaExplorer failed for {}: {}", req, e.getMessage());
+      return SchemaBrief.empty();
     }
+  }
 
-    public SchemaBrief explore(ExploreRequest req) {
-        try {
-            return runToolLoop(req);
-        } catch (Exception e) {
-            log.warn("SchemaExplorer failed for {}: {}", req, e.getMessage());
-            return SchemaBrief.empty();
-        }
-    }
+  private SchemaBrief runToolLoop(ExploreRequest req) throws Exception {
+    List<Map<String, Object>> messages = new ArrayList<>();
+    messages.add(Map.of("role", "system", "content", SYSTEM_PROMPT));
 
-    private SchemaBrief runToolLoop(ExploreRequest req) throws Exception {
-        List<Map<String, Object>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content", SYSTEM_PROMPT));
+    Map<String, Object> input = new LinkedHashMap<>();
+    input.put("query_hint", req.queryHint());
+    if (req.keyword() != null) input.put("keyword", req.keyword());
+    if (req.table() != null) input.put("table", req.table());
+    input.put("value_lookups", req.valueLookups());
+    messages.add(Map.of("role", "user", "content", om.writeValueAsString(input)));
 
-        Map<String, Object> input = new LinkedHashMap<>();
-        input.put("query_hint", req.queryHint());
-        if (req.keyword() != null) input.put("keyword", req.keyword());
-        if (req.table() != null) input.put("table", req.table());
-        input.put("value_lookups", req.valueLookups());
-        messages.add(Map.of("role", "user", "content", om.writeValueAsString(input)));
+    List<Map<String, Object>> tools = explorerTools();
+    // Layer B: get_sample_rows 응답을 캡쳐 — LLM 이 anchor 누락 시 Java 가 직접 값↔컬럼 매칭에 사용.
+    // table 이름(qualified) → SampleRowsResponse 원본.
+    Map<String, Map<String, Object>> capturedSamples = new LinkedHashMap<>();
 
-        List<Map<String, Object>> tools = explorerTools();
-        // Layer B: get_sample_rows 응답을 캡쳐 — LLM 이 anchor 누락 시 Java 가 직접 값↔컬럼 매칭에 사용.
-        // table 이름(qualified) → SampleRowsResponse 원본.
-        Map<String, Map<String, Object>> capturedSamples = new LinkedHashMap<>();
+    for (int i = 0; i < MAX_TOOL_ITERATIONS; i++) {
+      // 마지막 iteration 에서는 JSON 모드 강제 (도구 호출 그만하고 결과만)
+      boolean lastIter = (i == MAX_TOOL_ITERATIONS - 1);
+      JsonNode resp = azureClient.chatCompletion(messages, lastIter ? null : tools, lastIter);
+      JsonNode message = resp.path("choices").path(0).path("message");
+      JsonNode toolCalls = message.path("tool_calls");
 
-        for (int i = 0; i < MAX_TOOL_ITERATIONS; i++) {
-            // 마지막 iteration 에서는 JSON 모드 강제 (도구 호출 그만하고 결과만)
-            boolean lastIter = (i == MAX_TOOL_ITERATIONS - 1);
-            JsonNode resp = azureClient.chatCompletion(messages, lastIter ? null : tools, lastIter);
-            JsonNode message = resp.path("choices").path(0).path("message");
-            JsonNode toolCalls = message.path("tool_calls");
-
-            if (toolCalls.isArray() && !toolCalls.isEmpty() && !lastIter) {
-                appendAssistantWithToolCalls(messages, message, toolCalls);
-                for (JsonNode tc : toolCalls) {
-                    String name = tc.path("function").path("name").asText();
-                    String argsJson = tc.path("function").path("arguments").asText("{}");
-                    Map<String, Object> args = parseMap(argsJson);
-                    Object result = invokeTool(name, args);
-                    // sample_rows 결과는 별도 캡쳐 (Layer B 후처리용)
-                    if ("get_sample_rows".equals(name) && result instanceof Map<?, ?> r) {
-                        String tableKey = qualifiedTableKey(args);
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> casted = (Map<String, Object>) r;
-                        if (casted.containsKey("rows") && casted.containsKey("columns")) {
-                            capturedSamples.put(tableKey, casted);
-                        }
-                    }
-                    messages.add(Map.of(
-                            "role", "tool",
-                            "tool_call_id", tc.path("id").asText(),
-                            "name", name,
-                            "content", om.writeValueAsString(result)
-                    ));
-                }
-                continue;
-            }
-
-            // 최종 응답
-            String content = message.path("content").asText("");
-            SchemaBrief brief = parseBrief(content);
-            // Layer B: LLM 이 못 채운 anchor 를 sample 직매칭으로 보강
-            return attachDeterministicAnchors(brief, capturedSamples, req.valueLookups());
-        }
-        return SchemaBrief.empty();
-    }
-
-    /** LLM tool call 의 args ({schema, table}) → "schema.table" qualified key. */
-    private static String qualifiedTableKey(Map<String, Object> args) {
-        Object t = args.get("table");
-        if (t == null) return "";
-        String table = String.valueOf(t);
-        if (table.contains(".")) return table;
-        Object s = args.get("schema");
-        String schema = s == null || String.valueOf(s).isBlank() ? "public" : String.valueOf(s);
-        return schema + "." + table;
-    }
-
-    /**
-     * Layer B: LLM 이 value_anchors 를 빠뜨린 경우, 캡쳐된 sample_rows 응답에서
-     * 결정론적(case-insensitive substring) 매칭으로 anchor 를 보강.
-     * 의미적 매칭(약어, 다국어, 코드↔명칭)은 LLM 영역이라 여기선 글자 매칭만 수행 — fast path.
-     */
-    private SchemaBrief attachDeterministicAnchors(
-            SchemaBrief brief,
-            Map<String, Map<String, Object>> capturedSamples,
-            List<String> valueLookups
-    ) {
-        if (valueLookups == null || valueLookups.isEmpty()) return brief;
-        if (capturedSamples.isEmpty()) return brief;
-
-        List<SchemaBrief.ValueAnchor> newAnchors = new ArrayList<>(brief.valueAnchors());
-        for (String value : valueLookups) {
-            if (value == null || value.isBlank()) continue;
-            // LLM 이 이미 found=true 로 채웠으면 skip — 의미적 매칭이 더 정확.
-            boolean alreadyFound = newAnchors.stream()
-                    .anyMatch(a -> a.value().equals(value) && a.found());
-            if (alreadyFound) continue;
-
-            String needle = value.trim().toLowerCase();
-            List<SchemaBrief.Location> hits = new ArrayList<>();
-            for (Map.Entry<String, Map<String, Object>> e : capturedSamples.entrySet()) {
-                String tableKey = e.getKey();
-                Map<String, Object> sample = e.getValue();
-                Object colsObj = sample.get("columns");
-                Object rowsObj = sample.get("rows");
-                if (!(colsObj instanceof List<?> cols) || !(rowsObj instanceof List<?> rows)) continue;
-                // 열 인덱스별로 매칭된 sample 값 1개만 기록 (중복 location 방지)
-                Map<Integer, String> matchedByCol = new LinkedHashMap<>();
-                for (Object rowObj : rows) {
-                    if (!(rowObj instanceof List<?> row)) continue;
-                    for (int ci = 0; ci < row.size() && ci < cols.size(); ci++) {
-                        if (matchedByCol.containsKey(ci)) continue;
-                        Object cell = row.get(ci);
-                        if (cell == null) continue;
-                        String text = String.valueOf(cell).toLowerCase();
-                        if (text.contains(needle)) {
-                            matchedByCol.put(ci, String.valueOf(cell));
-                        }
-                    }
-                }
-                for (Map.Entry<Integer, String> m : matchedByCol.entrySet()) {
-                    String colName = String.valueOf(cols.get(m.getKey()));
-                    hits.add(new SchemaBrief.Location(tableKey, colName, m.getValue()));
-                }
-            }
-            if (hits.isEmpty()) continue;
-
-            // 기존 anchor entry (found=false 였을 수도) 가 있으면 머지, 없으면 신규.
-            int existingIdx = -1;
-            for (int i = 0; i < newAnchors.size(); i++) {
-                if (newAnchors.get(i).value().equals(value)) { existingIdx = i; break; }
-            }
-            SchemaBrief.ValueAnchor merged;
-            if (existingIdx >= 0) {
-                SchemaBrief.ValueAnchor old = newAnchors.get(existingIdx);
-                List<SchemaBrief.Location> locs = new ArrayList<>(old.locations());
-                for (SchemaBrief.Location h : hits) if (!locs.contains(h)) locs.add(h);
-                merged = new SchemaBrief.ValueAnchor(value, true, locs, old.ruledOut(),
-                        (old.note() == null ? "" : old.note() + " | ") + "sample 직매칭으로 보강");
-                newAnchors.set(existingIdx, merged);
-            } else {
-                merged = new SchemaBrief.ValueAnchor(value, true, hits, List.of(),
-                        "sample 직매칭으로 보강 (LLM anchor 누락)");
-                newAnchors.add(merged);
-            }
-            log.debug("[deterministic-anchor] value='{}', locations={}", value, hits);
-        }
-        return new SchemaBrief(brief.tables(), brief.joinCandidates(), newAnchors, brief.notes());
-    }
-
-    private SchemaBrief parseBrief(String content) {
-        try {
-            // markdown 코드블록 제거
-            String trimmed = content.trim();
-            if (trimmed.startsWith("```")) {
-                int firstNl = trimmed.indexOf('\n');
-                int lastFence = trimmed.lastIndexOf("```");
-                if (firstNl > 0 && lastFence > firstNl) {
-                    trimmed = trimmed.substring(firstNl + 1, lastFence).trim();
-                }
-            }
-            return om.readValue(trimmed, SchemaBrief.class);
-        } catch (Exception e) {
-            log.warn("SchemaBrief parse failed; raw='{}'", content, e);
-            return SchemaBrief.empty();
-        }
-    }
-
-    private Object invokeTool(String name, Map<String, Object> args) {
-        return switch (name) {
-            case "search_tables" -> nl2SqlClient.searchTables(
-                    (String) args.get("keyword"),
-                    args.get("top_k") instanceof Number n ? n.intValue() : null);
-            case "get_table_schema" -> nl2SqlClient.getTableSchema(
-                    (String) args.getOrDefault("schema", "public"),
-                    (String) args.get("table"));
-            case "get_sample_rows" -> nl2SqlClient.getSampleRows(
-                    (String) args.getOrDefault("schema", "public"),
-                    (String) args.get("table"),
-                    args.get("limit") instanceof Number n ? Math.min(n.intValue(), 20) : 10);
-            default -> Map.of("error", "tool '" + name + "' not allowed for schema-explorer");
-        };
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> parseMap(String json) {
-        try { return om.readValue(json, Map.class); } catch (Exception e) { return Map.of(); }
-    }
-
-    private void appendAssistantWithToolCalls(List<Map<String, Object>> messages, JsonNode message, JsonNode toolCalls) {
-        Map<String, Object> assistantMsg = new LinkedHashMap<>();
-        assistantMsg.put("role", "assistant");
-        assistantMsg.put("content", message.path("content").asText(null));
-        List<Map<String, Object>> tcList = new ArrayList<>();
+      if (toolCalls.isArray() && !toolCalls.isEmpty() && !lastIter) {
+        appendAssistantWithToolCalls(messages, message, toolCalls);
         for (JsonNode tc : toolCalls) {
-            tcList.add(Map.of(
-                    "id", tc.path("id").asText(),
-                    "type", "function",
-                    "function", Map.of(
-                            "name", tc.path("function").path("name").asText(),
-                            "arguments", tc.path("function").path("arguments").asText()
-                    )
-            ));
+          String name = tc.path("function").path("name").asText();
+          String argsJson = tc.path("function").path("arguments").asText("{}");
+          Map<String, Object> args = parseMap(argsJson);
+          Object result = invokeTool(name, args);
+          // sample_rows 결과는 별도 캡쳐 (Layer B 후처리용)
+          if ("get_sample_rows".equals(name) && result instanceof Map<?, ?> r) {
+            String tableKey = qualifiedTableKey(args);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> casted = (Map<String, Object>) r;
+            if (casted.containsKey("rows") && casted.containsKey("columns")) {
+              capturedSamples.put(tableKey, casted);
+            }
+          }
+          messages.add(
+              Map.of(
+                  "role",
+                  "tool",
+                  "tool_call_id",
+                  tc.path("id").asText(),
+                  "name",
+                  name,
+                  "content",
+                  om.writeValueAsString(result)));
         }
-        assistantMsg.put("tool_calls", tcList);
-        messages.add(assistantMsg);
+        continue;
+      }
+
+      // 최종 응답
+      String content = message.path("content").asText("");
+      SchemaBrief brief = parseBrief(content);
+      // Layer B: LLM 이 못 채운 anchor 를 sample 직매칭으로 보강
+      return attachDeterministicAnchors(brief, capturedSamples, req.valueLookups());
+    }
+    return SchemaBrief.empty();
+  }
+
+  /** LLM tool call 의 args ({schema, table}) → "schema.table" qualified key. */
+  private static String qualifiedTableKey(Map<String, Object> args) {
+    Object t = args.get("table");
+    if (t == null) return "";
+    String table = String.valueOf(t);
+    if (table.contains(".")) return table;
+    Object s = args.get("schema");
+    String schema = s == null || String.valueOf(s).isBlank() ? "public" : String.valueOf(s);
+    return schema + "." + table;
+  }
+
+  /**
+   * Layer B: LLM 이 value_anchors 를 빠뜨린 경우, 캡쳐된 sample_rows 응답에서 결정론적(case-insensitive substring)
+   * 매칭으로 anchor 를 보강. 의미적 매칭(약어, 다국어, 코드↔명칭)은 LLM 영역이라 여기선 글자 매칭만 수행 — fast path.
+   */
+  private SchemaBrief attachDeterministicAnchors(
+      SchemaBrief brief,
+      Map<String, Map<String, Object>> capturedSamples,
+      List<String> valueLookups) {
+    if (valueLookups == null || valueLookups.isEmpty()) return brief;
+    if (capturedSamples.isEmpty()) return brief;
+
+    List<SchemaBrief.ValueAnchor> newAnchors = new ArrayList<>(brief.valueAnchors());
+    for (String value : valueLookups) {
+      if (value == null || value.isBlank()) continue;
+      // LLM 이 이미 found=true 로 채웠으면 skip — 의미적 매칭이 더 정확.
+      boolean alreadyFound =
+          newAnchors.stream().anyMatch(a -> a.value().equals(value) && a.found());
+      if (alreadyFound) continue;
+
+      String needle = value.trim().toLowerCase();
+      List<SchemaBrief.Location> hits = new ArrayList<>();
+      for (Map.Entry<String, Map<String, Object>> e : capturedSamples.entrySet()) {
+        String tableKey = e.getKey();
+        Map<String, Object> sample = e.getValue();
+        Object colsObj = sample.get("columns");
+        Object rowsObj = sample.get("rows");
+        if (!(colsObj instanceof List<?> cols) || !(rowsObj instanceof List<?> rows)) continue;
+        // 열 인덱스별로 매칭된 sample 값 1개만 기록 (중복 location 방지)
+        Map<Integer, String> matchedByCol = new LinkedHashMap<>();
+        for (Object rowObj : rows) {
+          if (!(rowObj instanceof List<?> row)) continue;
+          for (int ci = 0; ci < row.size() && ci < cols.size(); ci++) {
+            if (matchedByCol.containsKey(ci)) continue;
+            Object cell = row.get(ci);
+            if (cell == null) continue;
+            String text = String.valueOf(cell).toLowerCase();
+            if (text.contains(needle)) {
+              matchedByCol.put(ci, String.valueOf(cell));
+            }
+          }
+        }
+        for (Map.Entry<Integer, String> m : matchedByCol.entrySet()) {
+          String colName = String.valueOf(cols.get(m.getKey()));
+          hits.add(new SchemaBrief.Location(tableKey, colName, m.getValue()));
+        }
+      }
+      if (hits.isEmpty()) continue;
+
+      // 기존 anchor entry (found=false 였을 수도) 가 있으면 머지, 없으면 신규.
+      int existingIdx = -1;
+      for (int i = 0; i < newAnchors.size(); i++) {
+        if (newAnchors.get(i).value().equals(value)) {
+          existingIdx = i;
+          break;
+        }
+      }
+      SchemaBrief.ValueAnchor merged;
+      if (existingIdx >= 0) {
+        SchemaBrief.ValueAnchor old = newAnchors.get(existingIdx);
+        List<SchemaBrief.Location> locs = new ArrayList<>(old.locations());
+        for (SchemaBrief.Location h : hits) if (!locs.contains(h)) locs.add(h);
+        merged =
+            new SchemaBrief.ValueAnchor(
+                value,
+                true,
+                locs,
+                old.ruledOut(),
+                (old.note() == null ? "" : old.note() + " | ") + "sample 직매칭으로 보강");
+        newAnchors.set(existingIdx, merged);
+      } else {
+        merged =
+            new SchemaBrief.ValueAnchor(
+                value, true, hits, List.of(), "sample 직매칭으로 보강 (LLM anchor 누락)");
+        newAnchors.add(merged);
+      }
+      log.debug("[deterministic-anchor] value='{}', locations={}", value, hits);
+    }
+    return new SchemaBrief(brief.tables(), brief.joinCandidates(), newAnchors, brief.notes());
+  }
+
+  private SchemaBrief parseBrief(String content) {
+    try {
+      // markdown 코드블록 제거
+      String trimmed = content.trim();
+      if (trimmed.startsWith("```")) {
+        int firstNl = trimmed.indexOf('\n');
+        int lastFence = trimmed.lastIndexOf("```");
+        if (firstNl > 0 && lastFence > firstNl) {
+          trimmed = trimmed.substring(firstNl + 1, lastFence).trim();
+        }
+      }
+      return om.readValue(trimmed, SchemaBrief.class);
+    } catch (Exception e) {
+      log.warn("SchemaBrief parse failed; raw='{}'", content, e);
+      return SchemaBrief.empty();
+    }
+  }
+
+  private Object invokeTool(String name, Map<String, Object> args) {
+    return switch (name) {
+      case "search_tables" ->
+          nl2SqlClient.searchTables(
+              (String) args.get("keyword"),
+              args.get("top_k") instanceof Number n ? n.intValue() : null);
+      case "get_table_schema" ->
+          nl2SqlClient.getTableSchema(
+              (String) args.getOrDefault("schema", "public"), (String) args.get("table"));
+      case "get_sample_rows" ->
+          nl2SqlClient.getSampleRows(
+              (String) args.getOrDefault("schema", "public"),
+              (String) args.get("table"),
+              args.get("limit") instanceof Number n ? Math.min(n.intValue(), 20) : 10);
+      default -> Map.of("error", "tool '" + name + "' not allowed for schema-explorer");
+    };
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> parseMap(String json) {
+    try {
+      return om.readValue(json, Map.class);
+    } catch (Exception e) {
+      return Map.of();
+    }
+  }
+
+  private void appendAssistantWithToolCalls(
+      List<Map<String, Object>> messages, JsonNode message, JsonNode toolCalls) {
+    Map<String, Object> assistantMsg = new LinkedHashMap<>();
+    assistantMsg.put("role", "assistant");
+    assistantMsg.put("content", message.path("content").asText(null));
+    List<Map<String, Object>> tcList = new ArrayList<>();
+    for (JsonNode tc : toolCalls) {
+      tcList.add(
+          Map.of(
+              "id", tc.path("id").asText(),
+              "type", "function",
+              "function",
+                  Map.of(
+                      "name", tc.path("function").path("name").asText(),
+                      "arguments", tc.path("function").path("arguments").asText())));
+    }
+    assistantMsg.put("tool_calls", tcList);
+    messages.add(assistantMsg);
+  }
+
+  private List<Map<String, Object>> explorerTools() {
+    return List.of(
+        fn(
+            "search_tables",
+            "키워드(한국어 가능)로 관련 테이블/컬럼을 검색.",
+            Map.of(
+                "type", "object",
+                "properties",
+                    Map.of(
+                        "keyword", Map.of("type", "string"),
+                        "top_k", Map.of("type", "integer")),
+                "required", List.of("keyword"))),
+        fn(
+            "get_table_schema",
+            "단일 테이블의 컬럼/제약/인덱스 정보.",
+            Map.of(
+                "type", "object",
+                "properties",
+                    Map.of(
+                        "schema", Map.of("type", "string"),
+                        "table", Map.of("type", "string")),
+                "required", List.of("table"))),
+        fn(
+            "get_sample_rows",
+            "테이블 샘플 행 최대 20개.",
+            Map.of(
+                "type", "object",
+                "properties",
+                    Map.of(
+                        "schema", Map.of("type", "string"),
+                        "table", Map.of("type", "string"),
+                        "limit", Map.of("type", "integer")),
+                "required", List.of("table"))));
+  }
+
+  private Map<String, Object> fn(String name, String desc, Map<String, Object> params) {
+    return Map.of(
+        "type",
+        "function",
+        "function",
+        Map.of("name", name, "description", desc, "parameters", params));
+  }
+
+  public record ExploreRequest(
+      String queryHint,
+      String keyword, // 둘 중 하나만
+      String table,
+      List<String> valueLookups) {
+    public static ExploreRequest forKeyword(String hint, String keyword, List<String> values) {
+      return new ExploreRequest(hint, keyword, null, values == null ? List.of() : values);
     }
 
-    private List<Map<String, Object>> explorerTools() {
-        return List.of(
-                fn("search_tables", "키워드(한국어 가능)로 관련 테이블/컬럼을 검색.",
-                        Map.of(
-                                "type", "object",
-                                "properties", Map.of(
-                                        "keyword", Map.of("type", "string"),
-                                        "top_k", Map.of("type", "integer")
-                                ),
-                                "required", List.of("keyword")
-                        )),
-                fn("get_table_schema", "단일 테이블의 컬럼/제약/인덱스 정보.",
-                        Map.of(
-                                "type", "object",
-                                "properties", Map.of(
-                                        "schema", Map.of("type", "string"),
-                                        "table", Map.of("type", "string")
-                                ),
-                                "required", List.of("table")
-                        )),
-                fn("get_sample_rows", "테이블 샘플 행 최대 20개.",
-                        Map.of(
-                                "type", "object",
-                                "properties", Map.of(
-                                        "schema", Map.of("type", "string"),
-                                        "table", Map.of("type", "string"),
-                                        "limit", Map.of("type", "integer")
-                                ),
-                                "required", List.of("table")
-                        ))
-        );
+    public static ExploreRequest forTable(String hint, String table, List<String> values) {
+      return new ExploreRequest(hint, null, table, values == null ? List.of() : values);
     }
-
-    private Map<String, Object> fn(String name, String desc, Map<String, Object> params) {
-        return Map.of(
-                "type", "function",
-                "function", Map.of("name", name, "description", desc, "parameters", params)
-        );
-    }
-
-    public record ExploreRequest(
-            String queryHint,
-            String keyword,        // 둘 중 하나만
-            String table,
-            List<String> valueLookups
-    ) {
-        public static ExploreRequest forKeyword(String hint, String keyword, List<String> values) {
-            return new ExploreRequest(hint, keyword, null, values == null ? List.of() : values);
-        }
-        public static ExploreRequest forTable(String hint, String table, List<String> values) {
-            return new ExploreRequest(hint, null, table, values == null ? List.of() : values);
-        }
-    }
+  }
 }

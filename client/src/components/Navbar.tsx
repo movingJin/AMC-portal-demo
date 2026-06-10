@@ -1,27 +1,27 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/lib/auth';
-import { api } from '@/lib/api';
-import clsx from 'clsx';
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/lib/auth'
+import { api } from '@/lib/api'
+import clsx from 'clsx'
 
 export default function Navbar() {
-  const { user, clear } = useAuth();
-  const navigate = useNavigate();
+  const { user, clear } = useAuth()
+  const navigate = useNavigate()
 
   const logout = async () => {
-    try { await api<void>('/api/auth/logout', { method: 'POST' }); } catch {
+    try {
+      await api<void>('/api/auth/logout', { method: 'POST' })
+    } catch {
       // logout 실패해도 클라이언트 상태는 정리
     }
-    clear();
-    navigate('/login');
-  };
+    clear()
+    navigate('/login')
+  }
 
   const navItem = ({ isActive }: { isActive: boolean }) =>
     clsx(
       'px-3 py-1.5 rounded-md text-sm transition',
-      isActive
-        ? 'text-brand-700 bg-brand-50'
-        : 'text-ink-600 hover:text-ink-900 hover:bg-ink-100'
-    );
+      isActive ? 'text-brand-700 bg-brand-50' : 'text-ink-600 hover:text-ink-900 hover:bg-ink-100',
+    )
 
   return (
     <nav className="sticky top-0 z-30 border-b border-ink-200/70 bg-white/75 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
@@ -34,8 +34,12 @@ export default function Navbar() {
             <span className="font-semibold text-ink-900 tracking-tight">AMC Portal</span>
           </Link>
           <div className="hidden sm:flex items-center gap-1">
-            <NavLink to="/board" className={navItem}>게시판</NavLink>
-            <NavLink to="/chatbot" className={navItem}>데이터 챗봇</NavLink>
+            <NavLink to="/board" className={navItem}>
+              게시판
+            </NavLink>
+            <NavLink to="/chatbot" className={navItem}>
+              데이터 챗봇
+            </NavLink>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
@@ -53,12 +57,16 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login" className="btn-ghost">로그인</Link>
-              <Link to="/signup" className="btn-primary">회원가입</Link>
+              <Link to="/login" className="btn-ghost">
+                로그인
+              </Link>
+              <Link to="/signup" className="btn-primary">
+                회원가입
+              </Link>
             </>
           )}
         </div>
       </div>
     </nav>
-  );
+  )
 }

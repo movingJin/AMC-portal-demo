@@ -14,35 +14,37 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Board extends BaseTimeEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, length = 200)
-    private String title;
+  @Column(nullable = false, length = 200)
+  private String title;
 
-    @Lob
-    @Column(nullable = false, columnDefinition = "text")
-    private String content;
+  @Lob
+  @Column(nullable = false, columnDefinition = "text")
+  private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "author_id", nullable = false)
+  private User author;
 
-    @Column(nullable = false)
-    private long viewCount = 0L;
+  @Column(nullable = false)
+  private long viewCount = 0L;
 
-    @Builder
-    public Board(String title, String content, User author) {
-        this.title = title;
-        this.content = content;
-        this.author = author;
-    }
+  @Builder
+  public Board(String title, String content, User author) {
+    this.title = title;
+    this.content = content;
+    this.author = author;
+  }
 
-    public void update(String title, String content) {
-        this.title = title;
-        this.content = content;
-    }
+  public void update(String title, String content) {
+    this.title = title;
+    this.content = content;
+  }
 
-    public void incrementViewCount() { this.viewCount++; }
+  public void incrementViewCount() {
+    this.viewCount++;
+  }
 }

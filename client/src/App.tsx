@@ -1,15 +1,15 @@
-import { Routes, Route } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import SignupPage from '@/pages/SignupPage';
-import VerifyEmailPage from '@/pages/VerifyEmailPage';
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
-import ResetPasswordPage from '@/pages/ResetPasswordPage';
-import BoardListPage from '@/pages/BoardListPage';
-import BoardDetailPage from '@/pages/BoardDetailPage';
-import NewBoardPage from '@/pages/NewBoardPage';
-import ChatbotPage from '@/pages/ChatbotPage';
+import { Routes, Route } from 'react-router-dom'
+import Navbar from '@/components/Navbar'
+import HomePage from '@/pages/HomePage'
+import LoginPage from '@/pages/LoginPage'
+import SignupPage from '@/pages/SignupPage'
+import VerifyEmailPage from '@/pages/VerifyEmailPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
+import BoardListPage from '@/pages/BoardListPage'
+import BoardDetailPage from '@/pages/BoardDetailPage'
+import NewBoardPage from '@/pages/NewBoardPage'
+import ChatbotPage from '@/pages/ChatbotPage'
 
 export default function App() {
   return (
@@ -31,13 +31,11 @@ export default function App() {
           <Route
             path="*"
             element={
-              <div className="card p-10 text-center text-ink-500">
-                페이지를 찾을 수 없습니다.
-              </div>
+              <div className="card p-10 text-center text-ink-500">페이지를 찾을 수 없습니다.</div>
             }
           />
         </Routes>
       </main>
     </div>
-  );
+  )
 }

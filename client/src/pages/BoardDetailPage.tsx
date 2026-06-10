@@ -1,54 +1,66 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
 
 type Board = {
-  id: number; title: string; content: string;
-  authorId: number; authorName: string; viewCount: number;
-  createdAt: string; updatedAt: string;
-};
+  id: number
+  title: string
+  content: string
+  authorId: number
+  authorName: string
+  viewCount: number
+  createdAt: string
+  updatedAt: string
+}
 
 type Comment = {
-  id: number; boardId: number; authorId: number; authorName: string;
-  content: string; createdAt: string;
-};
+  id: number
+  boardId: number
+  authorId: number
+  authorName: string
+  content: string
+  createdAt: string
+}
 
 export default function BoardDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const user = useAuth((s) => s.user);
-  const [board, setBoard] = useState<Board | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [comment, setComment] = useState('');
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const user = useAuth((s) => s.user)
+  const [board, setBoard] = useState<Board | null>(null)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [comment, setComment] = useState('')
 
   const load = async () => {
-    setBoard(await api<Board>(`/api/board/${id}`));
-    setComments(await api<Comment[]>(`/api/board/${id}/comments`));
-  };
+    setBoard(await api<Board>(`/api/board/${id}`))
+    setComments(await api<Comment[]>(`/api/board/${id}/comments`))
+  }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    load() /* eslint-disable-next-line */
+  }, [id])
 
   const remove = async () => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    await api<void>(`/api/board/${id}`, { method: 'DELETE' });
-    navigate('/board');
-  };
+    if (!confirm('정말 삭제하시겠습니까?')) return
+    await api<void>(`/api/board/${id}`, { method: 'DELETE' })
+    navigate('/board')
+  }
 
   const addComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!comment.trim()) return;
+    e.preventDefault()
+    if (!comment.trim()) return
     await api<Comment>(`/api/board/${id}/comments`, {
-      method: 'POST', body: JSON.stringify({ content: comment })
-    });
-    setComment('');
-    setComments(await api<Comment[]>(`/api/board/${id}/comments`));
-  };
+      method: 'POST',
+      body: JSON.stringify({ content: comment }),
+    })
+    setComment('')
+    setComments(await api<Comment[]>(`/api/board/${id}/comments`))
+  }
 
   const removeComment = async (cid: number) => {
-    await api<void>(`/api/comments/${cid}`, { method: 'DELETE' });
-    setComments(await api<Comment[]>(`/api/board/${id}/comments`));
-  };
+    await api<void>(`/api/comments/${cid}`, { method: 'DELETE' })
+    setComments(await api<Comment[]>(`/api/board/${id}/comments`))
+  }
 
   if (!board) {
     return (
@@ -57,15 +69,24 @@ export default function BoardDetailPage() {
         <div className="skeleton h-4 w-1/3" />
         <div className="skeleton h-32 w-full mt-4" />
       </div>
-    );
+    )
   }
-  const isOwner = user?.id === board.authorId;
+  const isOwner = user?.id === board.authorId
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <Link to="/board" className="inline-flex items-center gap-1.5 text-sm text-ink-500 hover:text-brand-600 transition">
+      <Link
+        to="/board"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-500 hover:text-brand-600 transition"
+      >
         <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-          <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path
+            d="M15 6l-6 6 6 6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
         게시판으로
       </Link>
@@ -83,7 +104,9 @@ export default function BoardDetailPage() {
               <span className="text-ink-700">{board.authorName}</span>
             </span>
             <span className="text-ink-300">·</span>
-            <span className="text-ink-500">{new Date(board.createdAt).toLocaleString('ko-KR')}</span>
+            <span className="text-ink-500">
+              {new Date(board.createdAt).toLocaleString('ko-KR')}
+            </span>
             <span className="text-ink-300">·</span>
             <span className="chip">조회 {board.viewCount.toLocaleString()}</span>
           </div>
@@ -91,7 +114,9 @@ export default function BoardDetailPage() {
         <div className="whitespace-pre-wrap leading-relaxed text-ink-800">{board.content}</div>
         {isOwner && (
           <div className="flex justify-end gap-2 mt-8 pt-5 border-t border-ink-100">
-            <button onClick={remove} className="btn-danger">삭제</button>
+            <button onClick={remove} className="btn-danger">
+              삭제
+            </button>
           </div>
         )}
       </article>
@@ -122,8 +147,10 @@ export default function BoardDetailPage() {
                   </p>
                 </div>
                 {user?.id === c.authorId && (
-                  <button onClick={() => removeComment(c.id)}
-                          className="text-xs text-ink-400 hover:text-red-600 transition">
+                  <button
+                    onClick={() => removeComment(c.id)}
+                    className="text-xs text-ink-400 hover:text-red-600 transition"
+                  >
                     삭제
                   </button>
                 )}
@@ -151,5 +178,5 @@ export default function BoardDetailPage() {
         )}
       </section>
     </div>
-  );
+  )
 }

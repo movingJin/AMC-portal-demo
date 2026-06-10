@@ -1,31 +1,35 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { api } from '@/lib/api';
+import { useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { api } from '@/lib/api'
 
 export default function VerifyEmailPage() {
-  const [params] = useSearchParams();
-  const navigate = useNavigate();
-  const initialEmail = params.get('email') || '';
-  const [email, setEmail] = useState(initialEmail);
-  const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
-  const emailLocked = !!initialEmail;
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const initialEmail = params.get('email') || ''
+  const [email, setEmail] = useState(initialEmail)
+  const [code, setCode] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [done, setDone] = useState(false)
+  const emailLocked = !!initialEmail
 
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null); setLoading(true);
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
     try {
       await api<void>('/api/auth/verify-email', {
-        method: 'POST', body: JSON.stringify({ email, code })
-      });
-      setDone(true);
-      setTimeout(() => navigate('/login'), 1500);
+        method: 'POST',
+        body: JSON.stringify({ email, code }),
+      })
+      setDone(true)
+      setTimeout(() => navigate('/login'), 1500)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '인증 실패');
-    } finally { setLoading(false); }
-  };
+      setError(e instanceof Error ? e.message : '인증 실패')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="max-w-md mx-auto animate-fade-in">
@@ -48,18 +52,29 @@ export default function VerifyEmailPage() {
             ) : (
               <div>
                 <label className="label">이메일</label>
-                <input type="email" placeholder="이메일" value={email}
-                       onChange={(e) => setEmail(e.target.value)}
-                       className="input" required />
+                <input
+                  type="email"
+                  placeholder="이메일"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input"
+                  required
+                />
               </div>
             )}
             <div>
               <label className="label">인증코드</label>
-              <input type="text" placeholder="000000"
-                     value={code} onChange={(e) => setCode(e.target.value)}
-                     maxLength={6} pattern="\d{6}"
-                     className="input text-center text-lg tracking-[0.6em] font-mono"
-                     autoFocus required />
+              <input
+                type="text"
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                maxLength={6}
+                pattern="\d{6}"
+                className="input text-center text-lg tracking-[0.6em] font-mono"
+                autoFocus
+                required
+              />
               <p className="text-xs text-ink-500 mt-1.5">코드는 10분 후 만료됩니다.</p>
             </div>
             {error && (
@@ -74,5 +89,5 @@ export default function VerifyEmailPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

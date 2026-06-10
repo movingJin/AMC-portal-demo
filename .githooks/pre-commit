@@ -1,0 +1,14 @@
+#!/bin/sh
+# AMC Portal pre-commit hook.
+# 프론트: 스테이징된 TS/JS/CSS를 lint-staged 로 빠르게 lint+format.
+# 백엔드(Java)는 빌드/CI 에서 검사(매 커밋 Gradle 실행은 느려서 제외).
+# 활성화: git config core.hooksPath .githooks  (clone 후 1회)
+
+staged=$(git diff --cached --name-only)
+
+if echo "$staged" | grep -q '^client/'; then
+	echo "[pre-commit] client lint-staged..."
+	(cd client && npx --no-install lint-staged) || exit 1
+fi
+
+exit 0
