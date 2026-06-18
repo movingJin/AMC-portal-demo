@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 
@@ -26,6 +26,8 @@ type Comment = {
 export default function BoardDetailPage() {
   const { boardMasterId, postId } = useParams<{ boardMasterId: string; postId: string }>()
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const listSearch: string = state?.listSearch ?? ''
   const user = useAuth((s) => s.user)
   const [board, setBoard] = useState<Board | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
@@ -47,10 +49,12 @@ export default function BoardDetailPage() {
     /* eslint-disable-next-line */
   }, [postId])
 
+  const toList = () => navigate(`/board/${boardMasterId}${listSearch}`)
+
   const remove = async () => {
     if (!confirm('정말 삭제하시겠습니까?')) return
     await api<void>(`/api/board/${postId}`, { method: 'DELETE' })
-    navigate(`/board/${boardMasterId}`)
+    toList()
   }
 
   const addComment = async (e: React.FormEvent) => {
@@ -107,10 +111,7 @@ export default function BoardDetailPage() {
           dangerouslySetInnerHTML={{ __html: board.content }}
         />
         <div className="flex justify-between items-center mt-8 pt-5 border-t border-ink-100">
-          <button
-            onClick={() => navigate(`/board/${boardMasterId}`)}
-            className="btn-secondary"
-          >
+          <button onClick={toList} className="btn-secondary">
             목록
           </button>
           {isOwner && (

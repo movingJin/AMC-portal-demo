@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import Pagination from '@/components/Pagination'
@@ -18,20 +18,18 @@ const PAGE_SIZE = 10
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('ko-KR', {
-    year: '2-digit',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    year: '2-digit', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
   })
 }
 
-
 export default function BoardMasterListPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page   = Number(searchParams.get('page') ?? '0')
+  const search = searchParams.get('keyword') ?? ''
+
   const [data, setData] = useState<Page<BoardMaster> | null>(null)
-  const [page, setPage] = useState(0)
-  const [keyword, setKeyword] = useState('')
-  const [search, setSearch] = useState('')
+  const [keyword, setKeyword] = useState(search)
   const [toggling, setToggling] = useState<number | null>(null)
   const user = useAuth((s) => s.user)
   const navigate = useNavigate()
@@ -43,8 +41,11 @@ export default function BoardMasterListPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setSearch(keyword)
-    setPage(0)
+    setSearchParams({ ...(keyword ? { keyword } : {}), page: '0' })
+  }
+
+  const handlePageChange = (p: number) => {
+    setSearchParams({ ...(search ? { keyword: search } : {}), page: String(p) })
   }
 
   const handleToggle = async (id: number) => {
@@ -53,12 +54,7 @@ export default function BoardMasterListPage() {
       const updated = await api<BoardMaster>(`/api/board-master/${id}/use-yn`, { method: 'PATCH' })
       setData((prev) =>
         prev
-          ? {
-              ...prev,
-              content: prev.content.map((bm) =>
-                bm.id === id ? { ...bm, useYn: updated.useYn } : bm,
-              ),
-            }
+          ? { ...prev, content: prev.content.map((bm) => bm.id === id ? { ...bm, useYn: updated.useYn } : bm) }
           : prev,
       )
     } finally {
@@ -78,12 +74,7 @@ export default function BoardMasterListPage() {
         {user && (
           <Link to="/board-master/new" className="btn-primary">
             <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-              <path
-                d="M12 5v14M5 12h14"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
             등록
           </Link>
@@ -91,11 +82,7 @@ export default function BoardMasterListPage() {
       </header>
 
       <form onSubmit={handleSearch} className="relative">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400"
-        >
+        <svg viewBox="0 0 24 24" fill="none" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400">
           <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
           <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
@@ -139,7 +126,7 @@ export default function BoardMasterListPage() {
                 onClick={() => navigate(`/board-master/${bm.id}/edit`)}
               >
                 <td className="px-5 py-3.5 text-ink-400 tabular-nums">
-                  {data.number * PAGE_SIZE + idx + 1}
+                  {page * PAGE_SIZE + idx + 1}
                 </td>
                 <td className="px-5 py-3.5 font-medium text-ink-800">{bm.title}</td>
                 <td className="px-5 py-3.5 text-ink-600">{bm.authorName}</td>
@@ -153,11 +140,7 @@ export default function BoardMasterListPage() {
                     }`}
                     aria-label={bm.useYn ? '사용 중 (클릭하면 미사용)' : '미사용 (클릭하면 사용)'}
                   >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                        bm.useYn ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                    />
+                    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${bm.useYn ? 'translate-x-4' : 'translate-x-0'}`} />
                   </button>
                 </td>
               </tr>
@@ -174,11 +157,7 @@ export default function BoardMasterListPage() {
         </table>
       </div>
 
-      <Pagination
-        page={page}
-        totalPages={data?.totalPages ?? 0}
-        onChange={setPage}
-      />
+      <Pagination page={page} totalPages={data?.totalPages ?? 0} onChange={handlePageChange} />
     </div>
   )
 }
