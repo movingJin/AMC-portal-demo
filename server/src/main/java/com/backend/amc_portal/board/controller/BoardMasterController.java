@@ -24,7 +24,8 @@ public class BoardMasterController {
       @RequestParam(required = false) String keyword,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
-    return ApiResponse.ok(boardMasterService.list(keyword, PageRequest.of(page, Math.min(size, 100))));
+    return ApiResponse.ok(
+        boardMasterService.list(keyword, PageRequest.of(page, Math.min(size, 100))));
   }
 
   @GetMapping("/{id}")

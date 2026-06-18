@@ -45,8 +45,15 @@ public class BoardMaster extends BaseTimeEntity {
   private boolean useYn = true;
 
   @Builder
-  public BoardMaster(String title, String description, BoardType boardType, User author,
-      boolean fileYn, int fileMaxCount, boolean commentYn, boolean useYn) {
+  public BoardMaster(
+      String title,
+      String description,
+      BoardType boardType,
+      User author,
+      boolean fileYn,
+      int fileMaxCount,
+      boolean commentYn,
+      boolean useYn) {
     this.title = title;
     this.description = description;
     this.boardType = boardType;
@@ -57,8 +64,13 @@ public class BoardMaster extends BaseTimeEntity {
     this.useYn = useYn;
   }
 
-  public void update(String title, String description, boolean fileYn, int fileMaxCount,
-      boolean commentYn, boolean useYn) {
+  public void update(
+      String title,
+      String description,
+      boolean fileYn,
+      int fileMaxCount,
+      boolean commentYn,
+      boolean useYn) {
     this.title = title;
     this.description = description;
     this.fileYn = fileYn;

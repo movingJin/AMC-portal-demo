@@ -45,7 +45,13 @@ public class BoardMasterService {
         boardMasterRepository
             .findById(id)
             .orElseThrow(() -> ApiException.notFound("게시판을 찾을 수 없습니다."));
-    bm.update(req.title(), req.description(), req.fileYn(), req.fileMaxCount(), req.commentYn(), req.useYn());
+    bm.update(
+        req.title(),
+        req.description(),
+        req.fileYn(),
+        req.fileMaxCount(),
+        req.commentYn(),
+        req.useYn());
     return BoardMasterResponse.from(bm);
   }
 
