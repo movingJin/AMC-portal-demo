@@ -51,7 +51,7 @@ export default function NewBoardPage() {
         navigate(`/board/${boardMasterId}/post/${created.id}`)
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : (isEdit ? '수정 실패' : '작성 실패'))
+      setError(e instanceof Error ? e.message : isEdit ? '수정 실패' : '작성 실패')
     } finally {
       setLoading(false)
     }
@@ -91,14 +91,16 @@ export default function NewBoardPage() {
             <button
               type="button"
               onClick={() =>
-                navigate(isEdit ? `/board/${boardMasterId}/post/${postId}` : `/board/${boardMasterId}`)
+                navigate(
+                  isEdit ? `/board/${boardMasterId}/post/${postId}` : `/board/${boardMasterId}`,
+                )
               }
               className="btn-secondary"
             >
               취소
             </button>
             <button disabled={loading} className="btn-primary">
-              {loading ? (isEdit ? '수정 중…' : '등록 중…') : (isEdit ? '수정' : '등록')}
+              {loading ? (isEdit ? '수정 중…' : '등록 중…') : isEdit ? '수정' : '등록'}
             </button>
           </div>
         </form>

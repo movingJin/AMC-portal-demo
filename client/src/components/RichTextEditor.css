@@ -9,11 +9,27 @@
   pointer-events: none;
   height: 0;
 }
-.editor-content .ProseMirror > * + * { margin-top: 0.6em; }
-.editor-content .ProseMirror h1 { font-size: 1.875rem; font-weight: 700; margin: 1em 0 0.4em; }
-.editor-content .ProseMirror h2 { font-size: 1.5rem;   font-weight: 700; margin: 1em 0 0.4em; }
-.editor-content .ProseMirror h3 { font-size: 1.25rem;  font-weight: 700; margin: 1em 0 0.4em; }
-.editor-content .ProseMirror p  { margin: 0 0 0.4em; }
+.editor-content .ProseMirror > * + * {
+  margin-top: 0.6em;
+}
+.editor-content .ProseMirror h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+}
+.editor-content .ProseMirror h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+}
+.editor-content .ProseMirror h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+}
+.editor-content .ProseMirror p {
+  margin: 0 0 0.4em;
+}
 .editor-content .ProseMirror blockquote {
   border-left: 3px solid #d1d5db;
   padding-left: 1em;
@@ -35,13 +51,40 @@
   font-family: 'Courier New', monospace;
   font-size: 0.9em;
 }
-.editor-content .ProseMirror hr { border: none; border-top: 1px solid #e5e7eb; margin: 1em 0; }
-.editor-content .ProseMirror a  { color: #2563eb; text-decoration: underline; cursor: pointer; }
-.editor-content .ProseMirror img    { max-width: 100%; height: auto; display: block; border-radius: 0.25rem; }
-.editor-content .ProseMirror iframe { max-width: 100%; display: block; border-radius: 0.25rem; }
-.editor-content .ProseMirror ul { list-style: disc;    padding-left: 1.5em; margin: 0.4em 0; }
-.editor-content .ProseMirror ol { list-style: decimal; padding-left: 1.5em; margin: 0.4em 0; }
-.editor-content .ProseMirror li { margin: 0.2em 0; }
+.editor-content .ProseMirror hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1em 0;
+}
+.editor-content .ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.editor-content .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0.25rem;
+}
+.editor-content .ProseMirror iframe {
+  max-width: 100%;
+  display: block;
+  border-radius: 0.25rem;
+}
+.editor-content .ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.editor-content .ProseMirror ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.editor-content .ProseMirror li {
+  margin: 0.2em 0;
+}
 
 /* Table */
 .editor-content .ProseMirror table {
@@ -59,7 +102,10 @@
   min-width: 40px;
   position: relative;
 }
-.editor-content .ProseMirror th { background: #f3f4f6; font-weight: 700; }
+.editor-content .ProseMirror th {
+  background: #f3f4f6;
+  font-weight: 700;
+}
 .editor-content .ProseMirror .selectedCell::after {
   background: rgba(100, 149, 237, 0.2);
   content: '';
@@ -78,19 +124,24 @@
 }
 
 /* Task List */
-.editor-content .ProseMirror ul[data-type="taskList"] { list-style: none; padding: 0; }
-.editor-content .ProseMirror ul[data-type="taskList"] > li {
+.editor-content .ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  padding: 0;
+}
+.editor-content .ProseMirror ul[data-type='taskList'] > li {
   display: flex;
   gap: 0.5rem;
   align-items: flex-start;
 }
-.editor-content .ProseMirror ul[data-type="taskList"] > li > label {
+.editor-content .ProseMirror ul[data-type='taskList'] > li > label {
   flex-shrink: 0;
   margin-top: 3px;
   user-select: none;
 }
-.editor-content .ProseMirror ul[data-type="taskList"] > li > div { flex: 1; }
-.editor-content .ProseMirror ul[data-type="taskList"] > li[data-checked="true"] > div {
+.editor-content .ProseMirror ul[data-type='taskList'] > li > div {
+  flex: 1;
+}
+.editor-content .ProseMirror ul[data-type='taskList'] > li[data-checked='true'] > div {
   text-decoration: line-through;
   opacity: 0.6;
 }

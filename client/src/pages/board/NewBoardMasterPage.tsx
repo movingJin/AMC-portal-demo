@@ -174,8 +174,12 @@ export default function NewBoardMasterPage() {
                 onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
               >
                 <option value="GENERAL">통합게시판</option>
-                <option value="BLOG" disabled>블로그형게시판 (추후 지원)</option>
-                <option value="GUESTBOOK" disabled>방명록 (추후 지원)</option>
+                <option value="BLOG" disabled>
+                  블로그형게시판 (추후 지원)
+                </option>
+                <option value="GUESTBOOK" disabled>
+                  방명록 (추후 지원)
+                </option>
               </select>
             </div>
             <div className="space-y-3">
@@ -190,7 +194,10 @@ export default function NewBoardMasterPage() {
                       max={10}
                       value={form.fileMaxCount}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, fileMaxCount: Math.max(1, Number(e.target.value)) }))
+                        setForm((f) => ({
+                          ...f,
+                          fileMaxCount: Math.max(1, Number(e.target.value)),
+                        }))
                       }
                       className="input w-24 text-center"
                     />

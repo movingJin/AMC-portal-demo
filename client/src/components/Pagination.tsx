@@ -27,7 +27,13 @@ export default function Pagination({ page, totalPages, onChange }: Props) {
         className="w-8 h-8 flex items-center justify-center rounded border border-ink-200 text-ink-500 hover:bg-ink-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
       >
         <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5">
-          <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M15 6l-6 6 6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
       {pageNumbers.map((n) => (
@@ -49,7 +55,13 @@ export default function Pagination({ page, totalPages, onChange }: Props) {
         className="w-8 h-8 flex items-center justify-center rounded border border-ink-200 text-ink-500 hover:bg-ink-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
       >
         <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5">
-          <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M9 6l6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
     </div>
