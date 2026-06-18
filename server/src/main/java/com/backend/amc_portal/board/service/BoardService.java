@@ -28,12 +28,16 @@ public class BoardService {
     return boardRepository.search(keyword, boardMasterId, pageable).map(BoardResponse::summary);
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   public BoardResponse get(Long id) {
     Board b =
         boardRepository.findById(id).orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    b.incrementViewCount();
     return BoardResponse.from(b);
+  }
+
+  @Transactional
+  public void incrementView(Long id) {
+    boardRepository.findById(id).ifPresent(Board::incrementViewCount);
   }
 
   @Transactional

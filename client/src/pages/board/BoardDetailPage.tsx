@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -31,13 +31,20 @@ export default function BoardDetailPage() {
   const [comments, setComments] = useState<Comment[]>([])
   const [comment, setComment] = useState('')
 
+  const viewedRef = useRef<string | null>(null)
+
   const load = async () => {
     setBoard(await api<Board>(`/api/board/${postId}`))
     setComments(await api<Comment[]>(`/api/board/${postId}/comments`))
   }
 
   useEffect(() => {
-    load() /* eslint-disable-next-line */
+    load()
+    if (viewedRef.current !== postId) {
+      viewedRef.current = postId ?? null
+      api<void>(`/api/board/${postId}/view`, { method: 'POST' }).catch(() => {})
+    }
+    /* eslint-disable-next-line */
   }, [postId])
 
   const remove = async () => {
@@ -95,7 +102,10 @@ export default function BoardDetailPage() {
             <span className="chip">조회 {board.viewCount.toLocaleString()}</span>
           </div>
         </header>
-        <div className="whitespace-pre-wrap leading-relaxed text-ink-800">{board.content}</div>
+        <div
+          className="editor-content leading-relaxed text-ink-800"
+          dangerouslySetInnerHTML={{ __html: board.content }}
+        />
         <div className="flex justify-between items-center mt-8 pt-5 border-t border-ink-100">
           <button
             onClick={() => navigate(`/board/${boardMasterId}`)}

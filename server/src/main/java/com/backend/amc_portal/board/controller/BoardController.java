@@ -35,6 +35,12 @@ public class BoardController {
     return ApiResponse.ok(boardService.get(id));
   }
 
+  @PostMapping("/{id}/view")
+  public ApiResponse<Void> incrementView(@PathVariable Long id) {
+    boardService.incrementView(id);
+    return ApiResponse.ok();
+  }
+
   @PostMapping
   public ApiResponse<BoardResponse> create(
       @AuthenticationPrincipal UserPrincipal p, @Valid @RequestBody BoardRequest req) {

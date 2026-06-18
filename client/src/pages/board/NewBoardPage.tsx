@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import RichTextEditor from '@/components/RichTextEditor'
+
+const EMPTY_HTML_RE = /^(<p><\/p>)*$/
 
 export default function NewBoardPage() {
   const { boardMasterId, postId } = useParams<{ boardMasterId: string; postId: string }>()
@@ -27,6 +30,10 @@ export default function NewBoardPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (EMPTY_HTML_RE.test(content.trim())) {
+      setError('내용을 입력해주세요.')
+      return
+    }
     setError(null)
     setLoading(true)
     try {
@@ -51,7 +58,7 @@ export default function NewBoardPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in">
+    <div className="max-w-5xl mx-auto animate-fade-in">
       <div className="card p-8 space-y-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -73,13 +80,7 @@ export default function NewBoardPage() {
           </div>
           <div>
             <label className="label">내용</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="내용을 입력하세요"
-              className="textarea min-h-[320px]"
-              required
-            />
+            <RichTextEditor value={content} onChange={setContent} />
           </div>
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
