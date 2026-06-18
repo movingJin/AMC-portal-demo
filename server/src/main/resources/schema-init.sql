@@ -17,6 +17,23 @@ CREATE TABLE IF NOT EXISTS portal.users (
 );
 CREATE INDEX IF NOT EXISTS idx_users_email ON portal.users (email);
 
+-- board_masters (게시판 관리)
+CREATE TABLE IF NOT EXISTS portal.board_masters (
+    id              BIGSERIAL     PRIMARY KEY,
+    title           VARCHAR(100)  NOT NULL,
+    description     VARCHAR(500),
+    type            VARCHAR(20)   NOT NULL DEFAULT 'GENERAL'
+        CHECK (type IN ('GENERAL', 'BLOG', 'GUESTBOOK')),
+    author_id       BIGINT        NOT NULL REFERENCES portal.users(id),
+    file_yn         BOOLEAN       NOT NULL DEFAULT FALSE,
+    file_max_count  INTEGER       NOT NULL DEFAULT 0,
+    comment_yn      BOOLEAN       NOT NULL DEFAULT FALSE,
+    use_yn          BOOLEAN       NOT NULL DEFAULT TRUE,
+    created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_board_masters_type ON portal.board_masters (type);
+
 -- boards (게시글)
 CREATE TABLE IF NOT EXISTS portal.boards (
     id          BIGSERIAL PRIMARY KEY,
@@ -53,7 +70,7 @@ DO $$
 DECLARE
     t TEXT;
 BEGIN
-    FOR t IN SELECT unnest(ARRAY['users', 'boards', 'comments']) LOOP
+    FOR t IN SELECT unnest(ARRAY['users', 'board_masters', 'boards', 'comments']) LOOP
         EXECUTE format('
             DROP TRIGGER IF EXISTS trg_%s_updated_at ON portal.%s;
             CREATE TRIGGER trg_%s_updated_at BEFORE UPDATE ON portal.%s

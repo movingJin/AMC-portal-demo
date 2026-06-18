@@ -49,6 +49,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/board/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/board-master", "/api/board-master/**")
+                    .permitAll()
                     .anyRequest()
                     .authenticated())
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

@@ -10,6 +10,8 @@ import BoardListPage from '@/pages/BoardListPage'
 import BoardDetailPage from '@/pages/BoardDetailPage'
 import NewBoardPage from '@/pages/NewBoardPage'
 import ChatbotPage from '@/pages/ChatbotPage'
+import BoardMasterListPage from '@/pages/board/BoardMasterListPage'
+import NewBoardMasterPage from '@/pages/board/NewBoardMasterPage'
 
 export default function App() {
   return (
@@ -28,6 +30,9 @@ export default function App() {
           <Route path="/board/new" element={<NewBoardPage />} />
           <Route path="/board/:id" element={<BoardDetailPage />} />
           <Route path="/chatbot" element={<ChatbotPage />} />
+          <Route path="/board-master" element={<BoardMasterListPage />} />
+          <Route path="/board-master/new" element={<NewBoardMasterPage />} />
+          <Route path="/board-master/:id/edit" element={<NewBoardMasterPage />} />
           <Route
             path="*"
             element={

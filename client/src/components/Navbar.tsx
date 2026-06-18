@@ -40,6 +40,9 @@ export default function Navbar() {
             <NavLink to="/chatbot" className={navItem}>
               데이터 챗봇
             </NavLink>
+            <NavLink to="/board-master" className={navItem}>
+              게시판 관리
+            </NavLink>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
