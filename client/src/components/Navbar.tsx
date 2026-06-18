@@ -34,14 +34,17 @@ export default function Navbar() {
             <span className="font-semibold text-ink-900 tracking-tight">AMC Portal</span>
           </Link>
           <div className="hidden sm:flex items-center gap-1">
-            <NavLink to="/board" className={navItem}>
-              게시판
-            </NavLink>
             <NavLink to="/chatbot" className={navItem}>
               데이터 챗봇
             </NavLink>
             <NavLink to="/board-master" className={navItem}>
               게시판 관리
+            </NavLink>
+            <NavLink to="/board/1" className={navItem}>
+              테스트 게시판
+            </NavLink>
+            <NavLink to="/board/2" className={navItem}>
+              공지사항
             </NavLink>
           </div>
         </div>

@@ -36,16 +36,18 @@ CREATE INDEX IF NOT EXISTS idx_board_masters_type ON portal.board_masters (type)
 
 -- boards (게시글)
 CREATE TABLE IF NOT EXISTS portal.boards (
-    id          BIGSERIAL PRIMARY KEY,
-    title       VARCHAR(200) NOT NULL,
-    content     TEXT NOT NULL,
-    author_id   BIGINT NOT NULL REFERENCES portal.users(id) ON DELETE CASCADE,
-    view_count  BIGINT NOT NULL DEFAULT 0,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    id              BIGSERIAL PRIMARY KEY,
+    title           VARCHAR(200) NOT NULL,
+    content         TEXT NOT NULL,
+    author_id       BIGINT NOT NULL REFERENCES portal.users(id) ON DELETE CASCADE,
+    board_master_id BIGINT REFERENCES portal.board_masters(id),
+    view_count      BIGINT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_boards_created_at ON portal.boards (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_boards_author_id ON portal.boards (author_id);
+CREATE INDEX IF NOT EXISTS idx_boards_board_master_id ON portal.boards (board_master_id);
 
 -- comments (댓글)
 CREATE TABLE IF NOT EXISTS portal.comments (

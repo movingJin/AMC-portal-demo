@@ -23,10 +23,11 @@ public class BoardController {
   @GetMapping
   public ApiResponse<Page<BoardResponse>> list(
       @RequestParam(required = false) String keyword,
+      @RequestParam Long boardMasterId,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
     Pageable p = PageRequest.of(page, Math.min(size, 100));
-    return ApiResponse.ok(boardService.list(keyword, p));
+    return ApiResponse.ok(boardService.list(keyword, boardMasterId, p));
   }
 
   @GetMapping("/{id}")

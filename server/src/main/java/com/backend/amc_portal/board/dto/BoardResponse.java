@@ -10,6 +10,8 @@ public record BoardResponse(
     Long authorId,
     String authorName,
     long viewCount,
+    Long boardMasterId,
+    String boardMasterTitle,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt) {
   public static BoardResponse from(Board b) {
@@ -20,6 +22,8 @@ public record BoardResponse(
         b.getAuthor().getId(),
         b.getAuthor().getDisplayName(),
         b.getViewCount(),
+        b.getBoardMaster() != null ? b.getBoardMaster().getId() : null,
+        b.getBoardMaster() != null ? b.getBoardMaster().getTitle() : null,
         b.getCreatedAt(),
         b.getUpdatedAt());
   }
@@ -32,6 +36,8 @@ public record BoardResponse(
         b.getAuthor().getId(),
         b.getAuthor().getDisplayName(),
         b.getViewCount(),
+        b.getBoardMaster() != null ? b.getBoardMaster().getId() : null,
+        b.getBoardMaster() != null ? b.getBoardMaster().getTitle() : null,
         b.getCreatedAt(),
         b.getUpdatedAt());
   }

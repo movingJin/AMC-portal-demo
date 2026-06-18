@@ -16,9 +16,12 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
   private final JPAQueryFactory query;
 
   @Override
-  public Page<Board> search(String keyword, Pageable pageable) {
+  public Page<Board> search(String keyword, Long boardMasterId, Pageable pageable) {
     QBoard b = QBoard.board;
     BooleanBuilder where = new BooleanBuilder();
+    if (boardMasterId != null) {
+      where.and(b.boardMaster.id.eq(boardMasterId));
+    }
     if (keyword != null && !keyword.isBlank()) {
       String like = "%" + keyword.trim() + "%";
       where.and(b.title.likeIgnoreCase(like).or(b.content.likeIgnoreCase(like)));

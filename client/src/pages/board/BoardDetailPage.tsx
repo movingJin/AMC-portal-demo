@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 
@@ -24,7 +24,7 @@ type Comment = {
 }
 
 export default function BoardDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { boardMasterId, postId } = useParams<{ boardMasterId: string; postId: string }>()
   const navigate = useNavigate()
   const user = useAuth((s) => s.user)
   const [board, setBoard] = useState<Board | null>(null)
@@ -32,34 +32,34 @@ export default function BoardDetailPage() {
   const [comment, setComment] = useState('')
 
   const load = async () => {
-    setBoard(await api<Board>(`/api/board/${id}`))
-    setComments(await api<Comment[]>(`/api/board/${id}/comments`))
+    setBoard(await api<Board>(`/api/board/${postId}`))
+    setComments(await api<Comment[]>(`/api/board/${postId}/comments`))
   }
 
   useEffect(() => {
     load() /* eslint-disable-next-line */
-  }, [id])
+  }, [postId])
 
   const remove = async () => {
     if (!confirm('정말 삭제하시겠습니까?')) return
-    await api<void>(`/api/board/${id}`, { method: 'DELETE' })
-    navigate('/board')
+    await api<void>(`/api/board/${postId}`, { method: 'DELETE' })
+    navigate(`/board/${boardMasterId}`)
   }
 
   const addComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!comment.trim()) return
-    await api<Comment>(`/api/board/${id}/comments`, {
+    await api<Comment>(`/api/board/${postId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ content: comment }),
     })
     setComment('')
-    setComments(await api<Comment[]>(`/api/board/${id}/comments`))
+    setComments(await api<Comment[]>(`/api/board/${postId}/comments`))
   }
 
   const removeComment = async (cid: number) => {
     await api<void>(`/api/comments/${cid}`, { method: 'DELETE' })
-    setComments(await api<Comment[]>(`/api/board/${id}/comments`))
+    setComments(await api<Comment[]>(`/api/board/${postId}/comments`))
   }
 
   if (!board) {
@@ -75,22 +75,6 @@ export default function BoardDetailPage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <Link
-        to="/board"
-        className="inline-flex items-center gap-1.5 text-sm text-ink-500 hover:text-brand-600 transition"
-      >
-        <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-          <path
-            d="M15 6l-6 6 6 6"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        게시판으로
-      </Link>
-
       <article className="card p-8 sm:p-10">
         <header className="border-b border-ink-100 pb-5 mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-900">
@@ -112,13 +96,27 @@ export default function BoardDetailPage() {
           </div>
         </header>
         <div className="whitespace-pre-wrap leading-relaxed text-ink-800">{board.content}</div>
-        {isOwner && (
-          <div className="flex justify-end gap-2 mt-8 pt-5 border-t border-ink-100">
-            <button onClick={remove} className="btn-danger">
-              삭제
-            </button>
-          </div>
-        )}
+        <div className="flex justify-between items-center mt-8 pt-5 border-t border-ink-100">
+          <button
+            onClick={() => navigate(`/board/${boardMasterId}`)}
+            className="btn-secondary"
+          >
+            목록
+          </button>
+          {isOwner && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate(`/board/${boardMasterId}/post/${postId}/edit`)}
+                className="btn-secondary"
+              >
+                수정
+              </button>
+              <button onClick={remove} className="btn-danger">
+                삭제
+              </button>
+            </div>
+          )}
+        </div>
       </article>
 
       <section className="card p-8 space-y-5">

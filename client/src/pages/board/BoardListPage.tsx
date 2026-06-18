@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import Pagination from '@/components/Pagination'
+
+type BoardMaster = { id: number; title: string }
 
 type Board = {
   id: number
@@ -15,31 +18,48 @@ type Board = {
 type Page<T> = { content: T[]; totalElements: number; totalPages: number; number: number }
 
 export default function BoardListPage() {
+  const { boardMasterId } = useParams<{ boardMasterId: string }>()
+  const [boardMaster, setBoardMaster] = useState<BoardMaster | null>(null)
   const [data, setData] = useState<Page<Board> | null>(null)
   const [keyword, setKeyword] = useState('')
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const user = useAuth((s) => s.user)
 
-  const load = async (kw: string, p: number) => {
-    const url = `/api/board?page=${p}&size=20${kw ? `&keyword=${encodeURIComponent(kw)}` : ''}`
-    setData(await api<Page<Board>>(url))
-  }
+  useEffect(() => {
+    setBoardMaster(null)
+    setData(null)
+    setKeyword('')
+    setSearch('')
+    setPage(0)
+    api<BoardMaster>(`/api/board-master/${boardMasterId}`).then(setBoardMaster)
+  }, [boardMasterId])
 
   useEffect(() => {
-    load(keyword, page) /* eslint-disable-next-line */
-  }, [page])
+    if (!boardMasterId) return
+    const url = `/api/board?boardMasterId=${boardMasterId}&page=${page}&size=10${search ? `&keyword=${encodeURIComponent(search)}` : ''}`
+    api<Page<Board>>(url).then(setData)
+  }, [boardMasterId, page, search])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSearch(keyword)
+    setPage(0)
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">게시판</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {boardMaster ? boardMaster.title : <span className="skeleton inline-block h-7 w-32" />}
+          </h1>
           <p className="text-sm text-ink-500 mt-1">
             {data ? `전체 ${data.totalElements.toLocaleString()}개의 게시글` : '불러오는 중…'}
           </p>
         </div>
         {user && (
-          <Link to="/board/new" className="btn-primary">
+          <Link to={`/board/${boardMasterId}/new`} className="btn-primary">
             <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
               <path
                 d="M12 5v14M5 12h14"
@@ -53,14 +73,7 @@ export default function BoardListPage() {
         )}
       </header>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          setPage(0)
-          load(keyword, 0)
-        }}
-        className="relative"
-      >
+      <form onSubmit={handleSearch} className="relative">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -84,7 +97,7 @@ export default function BoardListPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wider text-ink-500 bg-ink-50/60">
-              <th className="px-5 py-3 w-16 font-medium">#</th>
+              <th className="px-5 py-3 w-16 font-medium">No</th>
               <th className="px-5 py-3 font-medium">제목</th>
               <th className="px-5 py-3 w-36 font-medium">작성자</th>
               <th className="px-5 py-3 w-20 font-medium text-right">조회</th>
@@ -112,12 +125,12 @@ export default function BoardListPage() {
                   </td>
                 </tr>
               ))}
-            {data?.content.map((b) => (
+            {data?.content.map((b, idx) => (
               <tr key={b.id} className="border-t border-ink-100 hover:bg-ink-50/60 transition">
-                <td className="px-5 py-3.5 text-ink-400 tabular-nums">{b.id}</td>
+                <td className="px-5 py-3.5 text-ink-400 tabular-nums">{data.number * 10 + idx + 1}</td>
                 <td className="px-5 py-3.5">
                   <Link
-                    to={`/board/${b.id}`}
+                    to={`/board/${boardMasterId}/post/${b.id}`}
                     className="font-medium text-ink-800 hover:text-brand-600 transition"
                   >
                     {b.title}
@@ -150,47 +163,11 @@ export default function BoardListPage() {
         </table>
       </div>
 
-      {data && data.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 text-sm">
-          <button
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-            className="btn-secondary"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-              <path
-                d="M15 6l-6 6 6 6"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            이전
-          </button>
-          <span className="px-3 py-1.5 text-ink-600 tabular-nums">
-            <span className="font-semibold text-ink-900">{page + 1}</span>
-            <span className="mx-1.5 text-ink-300">/</span>
-            {data.totalPages}
-          </span>
-          <button
-            disabled={page + 1 >= data.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="btn-secondary"
-          >
-            다음
-            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-              <path
-                d="M9 6l6 6-6 6"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        totalPages={data?.totalPages ?? 0}
+        onChange={setPage}
+      />
     </div>
   )
 }

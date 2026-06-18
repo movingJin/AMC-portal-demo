@@ -6,9 +6,9 @@ import SignupPage from '@/pages/SignupPage'
 import VerifyEmailPage from '@/pages/VerifyEmailPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
-import BoardListPage from '@/pages/BoardListPage'
-import BoardDetailPage from '@/pages/BoardDetailPage'
-import NewBoardPage from '@/pages/NewBoardPage'
+import BoardListPage from '@/pages/board/BoardListPage'
+import BoardDetailPage from '@/pages/board/BoardDetailPage'
+import NewBoardPage from '@/pages/board/NewBoardPage'
 import ChatbotPage from '@/pages/ChatbotPage'
 import BoardMasterListPage from '@/pages/board/BoardMasterListPage'
 import NewBoardMasterPage from '@/pages/board/NewBoardMasterPage'
@@ -26,9 +26,10 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/board" element={<BoardListPage />} />
-          <Route path="/board/new" element={<NewBoardPage />} />
-          <Route path="/board/:id" element={<BoardDetailPage />} />
+          <Route path="/board/:boardMasterId" element={<BoardListPage />} />
+          <Route path="/board/:boardMasterId/new" element={<NewBoardPage />} />
+          <Route path="/board/:boardMasterId/post/:postId" element={<BoardDetailPage />} />
+          <Route path="/board/:boardMasterId/post/:postId/edit" element={<NewBoardPage />} />
           <Route path="/chatbot" element={<ChatbotPage />} />
           <Route path="/board-master" element={<BoardMasterListPage />} />
           <Route path="/board-master/new" element={<NewBoardMasterPage />} />

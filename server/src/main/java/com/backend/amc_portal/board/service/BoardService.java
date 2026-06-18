@@ -5,6 +5,8 @@ import com.backend.amc_portal.auth.repository.UserRepository;
 import com.backend.amc_portal.board.dto.BoardRequest;
 import com.backend.amc_portal.board.dto.BoardResponse;
 import com.backend.amc_portal.board.entity.Board;
+import com.backend.amc_portal.board.entity.BoardMaster;
+import com.backend.amc_portal.board.repository.BoardMasterRepository;
 import com.backend.amc_portal.board.repository.BoardRepository;
 import com.backend.amc_portal.common.exception.ApiException;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class BoardService {
 
   private final BoardRepository boardRepository;
+  private final BoardMasterRepository boardMasterRepository;
   private final UserRepository userRepository;
 
   @Transactional(readOnly = true)
-  public Page<BoardResponse> list(String keyword, Pageable pageable) {
-    return boardRepository.search(keyword, pageable).map(BoardResponse::summary);
+  public Page<BoardResponse> list(String keyword, Long boardMasterId, Pageable pageable) {
+    return boardRepository.search(keyword, boardMasterId, pageable).map(BoardResponse::summary);
   }
 
   @Transactional
@@ -39,7 +42,17 @@ public class BoardService {
         userRepository
             .findById(userId)
             .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
-    Board board = Board.builder().title(req.title()).content(req.content()).author(user).build();
+    BoardMaster boardMaster =
+        boardMasterRepository
+            .findById(req.boardMasterId())
+            .orElseThrow(() -> ApiException.notFound("게시판을 찾을 수 없습니다."));
+    Board board =
+        Board.builder()
+            .title(req.title())
+            .content(req.content())
+            .author(user)
+            .boardMaster(boardMaster)
+            .build();
     return BoardResponse.from(boardRepository.save(board));
   }
 

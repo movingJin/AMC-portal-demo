@@ -21,7 +21,6 @@ public class Board extends BaseTimeEntity {
   @Column(nullable = false, length = 200)
   private String title;
 
-  @Lob
   @Column(nullable = false, columnDefinition = "text")
   private String content;
 
@@ -29,14 +28,19 @@ public class Board extends BaseTimeEntity {
   @JoinColumn(name = "author_id", nullable = false)
   private User author;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "board_master_id")
+  private BoardMaster boardMaster;
+
   @Column(nullable = false)
   private long viewCount = 0L;
 
   @Builder
-  public Board(String title, String content, User author) {
+  public Board(String title, String content, User author, BoardMaster boardMaster) {
     this.title = title;
     this.content = content;
     this.author = author;
+    this.boardMaster = boardMaster;
   }
 
   public void update(String title, String content) {
