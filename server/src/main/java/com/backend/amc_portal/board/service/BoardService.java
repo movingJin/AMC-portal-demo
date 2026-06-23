@@ -54,12 +54,15 @@ public class BoardService {
 
   @Transactional(readOnly = true)
   public BoardResponse get(Long id) {
-    Board b = boardRepository.findById(id)
-        .filter(board -> !board.isDeleted())
-        .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    List<BoardFileResponse> files = boardFileRepository.findByBoardIdOrderByIdAsc(id).stream()
-        .map(BoardFileResponse::from)
-        .toList();
+    Board b =
+        boardRepository
+            .findById(id)
+            .filter(board -> !board.isDeleted())
+            .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
+    List<BoardFileResponse> files =
+        boardFileRepository.findByBoardIdOrderByIdAsc(id).stream()
+            .map(BoardFileResponse::from)
+            .toList();
     return BoardResponse.from(b, files);
   }
 
@@ -77,7 +80,7 @@ public class BoardService {
     Board board = boardRepository.save(Board.builder()
         .title(req.title())
         .content(req.content())
-        .author(user)
+        .createdBy(user)
         .boardMaster(boardMaster)
         .build());
 
@@ -90,19 +93,28 @@ public class BoardService {
     Board board = boardRepository.findById(boardId)
         .filter(b -> !b.isDeleted())
         .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    checkOwner(board.getAuthor().getId(), userId);
-    board.update(req.title(), req.content());
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+    checkOwner(board.getCreatedBy().getId(), userId);
+    board.update(req.title(), req.content(), user);
 
     List<Long> deleteIds = req.deleteFileIds() != null ? req.deleteFileIds() : List.of();
-    deleteIds.forEach(fileId -> boardFileRepository.findById(fileId).ifPresent(bf -> {
-      saveDeleteHistory(bf, board);
-      boardFileRepository.delete(bf);
-    }));
+    deleteIds.forEach(
+        fileId ->
+            boardFileRepository
+                .findById(fileId)
+                .ifPresent(
+                    bf -> {
+                      saveDeleteHistory(bf, board);
+                      boardFileRepository.delete(bf);
+                    }));
 
-    persistFiles(board, files, board.getBoardMaster(), board.getAuthor());
+    persistFiles(board, files, board.getBoardMaster(), user);
 
-    List<BoardFileResponse> remaining = boardFileRepository.findByBoardIdOrderByIdAsc(boardId)
-        .stream().map(BoardFileResponse::from).toList();
+    List<BoardFileResponse> remaining =
+        boardFileRepository.findByBoardIdOrderByIdAsc(boardId).stream()
+            .map(BoardFileResponse::from)
+            .toList();
     return BoardResponse.from(board, remaining);
   }
 
@@ -111,8 +123,10 @@ public class BoardService {
     Board board = boardRepository.findById(boardId)
         .filter(b -> !b.isDeleted())
         .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    checkOwner(board.getAuthor().getId(), userId);
-    board.softDelete();
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+    checkOwner(board.getCreatedBy().getId(), userId);
+    board.softDelete(user);
   }
 
   private List<BoardFileResponse> persistFiles(
@@ -132,12 +146,11 @@ public class BoardService {
   private BoardFile saveFile(Board board, MultipartFile file, User actor) {
     if (file.isEmpty()) throw ApiException.badRequest("빈 파일은 업로드할 수 없습니다.");
     if (file.getSize() > maxSizeBytes) {
-      throw ApiException.badRequest(
-          "파일 크기는 " + (maxSizeBytes / 1024 / 1024) + "MB를 초과할 수 없습니다.");
+      throw ApiException.badRequest("파일 크기는 " + (maxSizeBytes / 1024 / 1024) + "MB를 초과할 수 없습니다.");
     }
     String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
-    String ext = originalName.contains(".")
-        ? originalName.substring(originalName.lastIndexOf('.')) : "";
+    String ext =
+        originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : "";
     String storedName = UUID.randomUUID() + ext;
     Path dir = Paths.get(uploadDir, String.valueOf(board.getId()));
     Path dest = dir.resolve(storedName);
@@ -149,15 +162,31 @@ public class BoardService {
     } catch (IOException e) {
       throw new RuntimeException("파일 저장에 실패했습니다.", e);
     }
-    String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+    String contentType =
+        file.getContentType() != null ? file.getContentType() : "application/octet-stream";
     String storagePath = dest.toAbsolutePath().toString();
-    BoardFile boardFile = boardFileRepository.save(BoardFile.builder()
-        .board(board).originalName(originalName).storedName(storedName)
-        .contentType(contentType).fileSize(file.getSize()).storagePath(storagePath).build());
-    boardFileHistoryRepository.save(BoardFileHistory.builder()
-        .fileId(boardFile.getId()).board(board).eventType(BoardFileEventType.UPLOAD)
-        .originalName(originalName).storedName(storedName).storagePath(storagePath)
-        .fileSize(file.getSize()).contentType(contentType).actedBy(actor).build());
+    BoardFile boardFile =
+        boardFileRepository.save(
+            BoardFile.builder()
+                .board(board)
+                .originalName(originalName)
+                .storedName(storedName)
+                .contentType(contentType)
+                .fileSize(file.getSize())
+                .storagePath(storagePath)
+                .build());
+    boardFileHistoryRepository.save(
+        BoardFileHistory.builder()
+            .fileId(boardFile.getId())
+            .board(board)
+            .eventType(BoardFileEventType.UPLOAD)
+            .originalName(originalName)
+            .storedName(storedName)
+            .storagePath(storagePath)
+            .fileSize(file.getSize())
+            .contentType(contentType)
+            .actedBy(actor)
+            .build());
     return boardFile;
   }
 
@@ -166,7 +195,7 @@ public class BoardService {
         .fileId(bf.getId()).board(board).eventType(BoardFileEventType.DELETE)
         .originalName(bf.getOriginalName()).storedName(bf.getStoredName())
         .storagePath(bf.getStoragePath()).fileSize(bf.getFileSize())
-        .contentType(bf.getContentType()).actedBy(board.getAuthor()).build());
+        .contentType(bf.getContentType()).actedBy(board.getCreatedBy()).build());
   }
 
   private void checkOwner(Long ownerId, Long actorId) {

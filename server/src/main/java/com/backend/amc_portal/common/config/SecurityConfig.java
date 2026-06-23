@@ -47,7 +47,9 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/api/auth/**", "/actuator/health", "/error")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/board/*/files/history",
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/board/*/files/history",
                         "/api/board/*/files/downloads")
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/board/**")

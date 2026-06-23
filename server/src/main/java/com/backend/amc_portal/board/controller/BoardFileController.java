@@ -31,15 +31,13 @@ public class BoardFileController {
 
   @GetMapping("/history")
   public ApiResponse<List<BoardFileHistoryResponse>> history(
-      @AuthenticationPrincipal UserPrincipal p,
-      @PathVariable Long boardId) {
+      @AuthenticationPrincipal UserPrincipal p, @PathVariable Long boardId) {
     return ApiResponse.ok(boardFileService.listHistory(p.id(), boardId));
   }
 
   @GetMapping("/downloads")
   public ApiResponse<List<BoardFileDownloadResponse>> downloads(
-      @AuthenticationPrincipal UserPrincipal p,
-      @PathVariable Long boardId) {
+      @AuthenticationPrincipal UserPrincipal p, @PathVariable Long boardId) {
     return ApiResponse.ok(boardFileService.listDownloads(p.id(), boardId));
   }
 
@@ -60,7 +58,8 @@ public class BoardFileController {
     String ip = resolveClientIp(request);
     BoardFileService.DownloadResult result = boardFileService.download(fileId, p.id(), ip);
     return ResponseEntity.ok()
-        .header(HttpHeaders.CONTENT_DISPOSITION,
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
             "attachment; filename=\"" + result.originalName() + "\"")
         .contentType(MediaType.parseMediaType(result.contentType()))
         .body(result.resource());

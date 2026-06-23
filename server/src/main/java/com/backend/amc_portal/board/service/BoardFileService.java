@@ -65,7 +65,7 @@ public class BoardFileService {
           "첨부파일은 최대 " + maxCount + "개까지 등록할 수 있습니다. (현재 " + currentCount + "개)");
     }
 
-    User actor = board.getAuthor();
+    User actor = board.getCreatedBy();
     return files.stream()
         .map(file -> saveFile(board, file, actor))
         .map(BoardFileResponse::from)
@@ -102,17 +102,20 @@ public class BoardFileService {
         throw ApiException.notFound("파일을 찾을 수 없습니다.");
       }
 
-      User user = userRepository.findById(userId)
-          .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
-      downloadRepository.save(BoardFileDownload.builder()
-          .fileId(boardFile.getId())
-          .board(boardFile.getBoard())
-          .originalName(boardFile.getOriginalName())
-          .storedName(boardFile.getStoredName())
-          .storagePath(boardFile.getStoragePath())
-          .user(user)
-          .ipAddress(ipAddress)
-          .build());
+      User user =
+          userRepository
+              .findById(userId)
+              .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+      downloadRepository.save(
+          BoardFileDownload.builder()
+              .fileId(boardFile.getId())
+              .board(boardFile.getBoard())
+              .originalName(boardFile.getOriginalName())
+              .storedName(boardFile.getStoredName())
+              .storagePath(boardFile.getStoragePath())
+              .user(user)
+              .ipAddress(ipAddress)
+              .build());
 
       return new DownloadResult(resource, boardFile.getOriginalName(), boardFile.getContentType());
     } catch (IOException e) {
@@ -134,7 +137,7 @@ public class BoardFileService {
         .storagePath(boardFile.getStoragePath())
         .fileSize(boardFile.getFileSize())
         .contentType(boardFile.getContentType())
-        .actedBy(boardFile.getBoard().getAuthor())
+        .actedBy(boardFile.getBoard().getCreatedBy())
         .build());
 
     boardFileRepository.delete(boardFile);
@@ -143,12 +146,12 @@ public class BoardFileService {
   private BoardFile saveFile(Board board, MultipartFile file, User actor) {
     if (file.isEmpty()) throw ApiException.badRequest("빈 파일은 업로드할 수 없습니다.");
     if (file.getSize() > maxSizeBytes) {
-      throw ApiException.badRequest(
-          "파일 크기는 " + (maxSizeBytes / 1024 / 1024) + "MB를 초과할 수 없습니다.");
+      throw ApiException.badRequest("파일 크기는 " + (maxSizeBytes / 1024 / 1024) + "MB를 초과할 수 없습니다.");
     }
 
     String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
-    String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : "";
+    String ext =
+        originalName.contains(".") ? originalName.substring(originalName.lastIndexOf('.')) : "";
     String storedName = UUID.randomUUID() + ext;
 
     Path dir = Paths.get(uploadDir, String.valueOf(board.getId()));
@@ -163,45 +166,51 @@ public class BoardFileService {
       throw new RuntimeException("파일 저장에 실패했습니다.", e);
     }
 
-    String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+    String contentType =
+        file.getContentType() != null ? file.getContentType() : "application/octet-stream";
     String storagePath = dest.toAbsolutePath().toString();
 
-    BoardFile boardFile = boardFileRepository.save(BoardFile.builder()
-        .board(board)
-        .originalName(originalName)
-        .storedName(storedName)
-        .contentType(contentType)
-        .fileSize(file.getSize())
-        .storagePath(storagePath)
-        .build());
+    BoardFile boardFile =
+        boardFileRepository.save(
+            BoardFile.builder()
+                .board(board)
+                .originalName(originalName)
+                .storedName(storedName)
+                .contentType(contentType)
+                .fileSize(file.getSize())
+                .storagePath(storagePath)
+                .build());
 
-    historyRepository.save(BoardFileHistory.builder()
-        .fileId(boardFile.getId())
-        .board(board)
-        .eventType(BoardFileEventType.UPLOAD)
-        .originalName(originalName)
-        .storedName(storedName)
-        .storagePath(storagePath)
-        .fileSize(file.getSize())
-        .contentType(contentType)
-        .actedBy(actor)
-        .build());
+    historyRepository.save(
+        BoardFileHistory.builder()
+            .fileId(boardFile.getId())
+            .board(board)
+            .eventType(BoardFileEventType.UPLOAD)
+            .originalName(originalName)
+            .storedName(storedName)
+            .storagePath(storagePath)
+            .fileSize(file.getSize())
+            .contentType(contentType)
+            .actedBy(actor)
+            .build());
 
     return boardFile;
   }
 
   private Board findBoard(Long boardId) {
-    return boardRepository.findById(boardId)
+    return boardRepository
+        .findById(boardId)
         .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
   }
 
   private BoardFile findFile(Long fileId) {
-    return boardFileRepository.findById(fileId)
+    return boardFileRepository
+        .findById(fileId)
         .orElseThrow(() -> ApiException.notFound("파일을 찾을 수 없습니다."));
   }
 
   private void checkOwner(Board board, Long userId) {
-    if (!board.getAuthor().getId().equals(userId)) {
+    if (!board.getCreatedBy().getId().equals(userId)) {
       throw ApiException.forbidden("권한이 없습니다.");
     }
   }
