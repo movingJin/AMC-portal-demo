@@ -1,6 +1,7 @@
 package com.backend.amc_portal.board.entity;
 
 import com.backend.amc_portal.auth.entity.User;
+import com.backend.amc_portal.board.enums.BoardType;
 import com.backend.amc_portal.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

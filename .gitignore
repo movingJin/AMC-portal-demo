@@ -27,6 +27,10 @@ client/*.tsbuildinfo
 .DS_Store
 Thumbs.db
 
+# ===== File uploads =====
+uploads/
+server/uploads/
+
 # ===== Logs =====
 *.log
 logs/

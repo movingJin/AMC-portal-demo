@@ -19,6 +19,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
   public Page<Board> search(String keyword, Long boardMasterId, Pageable pageable) {
     QBoard b = QBoard.board;
     BooleanBuilder where = new BooleanBuilder();
+    where.and(b.deletedAt.isNull());
     if (boardMasterId != null) {
       where.and(b.boardMaster.id.eq(boardMasterId));
     }

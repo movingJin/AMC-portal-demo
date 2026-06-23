@@ -5,6 +5,11 @@ spring:
   # DATABASE_URL (libpq 형식) 은 DatabaseUrlEnvPostProcessor 가
   # spring.datasource.{url,username,password} 로 분해해 주입.
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
   datasource:
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -67,6 +72,9 @@ app:
     base-url: ${NL2SQL_BASE_URL:https://amc-portal.movingjin.com}
     api-keys: ${NL2SQL_API_KEYS}
     timeout-seconds: 60
+  file:
+    upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+    max-size-bytes: ${FILE_MAX_SIZE:10485760}
   azure:
     openai:
       api-key: ${AZURE_OPENAI_API_KEY}
