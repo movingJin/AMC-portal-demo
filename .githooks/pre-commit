@@ -1,7 +1,8 @@
 #!/bin/sh
 # AMC Portal pre-commit hook.
 # 프론트: 스테이징된 TS/JS/CSS를 lint-staged 로 빠르게 lint+format.
-# 백엔드(Java)는 빌드/CI 에서 검사(매 커밋 Gradle 실행은 느려서 제외).
+# 백엔드(Java): 스테이징된 .java 파일이 있을 때만 spotlessApply + checkstyleMain 실행.
+#               (전체 빌드는 느려서 제외, 포맷/스타일만 빠르게 검증)
 # 활성화: git config core.hooksPath .githooks  (clone 후 1회)
 
 staged=$(git diff --cached --name-only)
@@ -9,6 +10,22 @@ staged=$(git diff --cached --name-only)
 if echo "$staged" | grep -q '^client/'; then
 	echo "[pre-commit] client lint-staged..."
 	(cd client && npx --no-install lint-staged) || exit 1
+fi
+
+if echo "$staged" | grep -q '\.java$'; then
+	echo "[pre-commit] backend spotless + checkstyle..."
+
+	# 1) 포맷 자동 수정 (spotlessApply는 수정만 하고 실패하지 않음)
+	./gradlew spotlessApply -q || exit 1
+
+	# 2) 수정된 파일 다시 스테이징 (spotlessApply가 파일을 고쳤을 수 있으므로)
+	echo "$staged" | grep '\.java$' | xargs -r git add
+
+	# 3) checkstyle 검증 (위반 시 커밋 중단)
+	./gradlew checkstyleMain checkstyleTest -q || {
+		echo "[pre-commit] checkstyle 위반 발견. 위 로그를 확인하세요."
+		exit 1
+	}
 fi
 
 exit 0
