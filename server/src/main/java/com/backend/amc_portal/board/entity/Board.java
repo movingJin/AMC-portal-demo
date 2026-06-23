@@ -3,6 +3,7 @@ package com.backend.amc_portal.board.entity;
 import com.backend.amc_portal.auth.entity.User;
 import com.backend.amc_portal.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
+import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,6 +36,9 @@ public class Board extends BaseTimeEntity {
   @Column(nullable = false)
   private long viewCount = 0L;
 
+  @Column(name = "deleted_at")
+  private OffsetDateTime deletedAt;
+
   @Builder
   public Board(String title, String content, User author, BoardMaster boardMaster) {
     this.title = title;
@@ -50,5 +54,13 @@ public class Board extends BaseTimeEntity {
 
   public void incrementViewCount() {
     this.viewCount++;
+  }
+
+  public void softDelete() {
+    this.deletedAt = OffsetDateTime.now();
+  }
+
+  public boolean isDeleted() {
+    return this.deletedAt != null;
   }
 }

@@ -52,7 +52,8 @@ async function refreshIfPossible(): Promise<string | null> {
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const state = useAuth.getState()
   const headers = new Headers(init.headers)
-  if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json')
+  if (!headers.has('Content-Type') && init.body && !(init.body instanceof FormData))
+    headers.set('Content-Type', 'application/json')
   if (state.accessToken) headers.set('Authorization', `Bearer ${state.accessToken}`)
 
   let res = await fetch(path, { ...init, headers })

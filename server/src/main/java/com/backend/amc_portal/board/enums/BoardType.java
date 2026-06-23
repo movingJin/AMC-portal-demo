@@ -1,4 +1,4 @@
-package com.backend.amc_portal.board.entity;
+package com.backend.amc_portal.board.enums;
 
 public enum BoardType {
   GENERAL,

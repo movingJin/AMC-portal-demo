@@ -1,7 +1,7 @@
 package com.backend.amc_portal.board.dto;
 
 import com.backend.amc_portal.board.entity.BoardMaster;
-import com.backend.amc_portal.board.entity.BoardType;
+import com.backend.amc_portal.board.enums.BoardType;
 import java.time.OffsetDateTime;
 
 public record BoardMasterResponse(
