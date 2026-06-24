@@ -2,8 +2,9 @@ package com.backend.amc_portal.board.dto;
 
 import com.backend.amc_portal.board.entity.Comment;
 import java.time.OffsetDateTime;
+import java.util.List;
 
-public record CommentResponse(
+public record CommentTreeResponse(
     Long id,
     Long boardId,
     Long parentId,
@@ -13,9 +14,11 @@ public record CommentResponse(
     String updatedByName,
     String content,
     OffsetDateTime createdAt,
-    OffsetDateTime updatedAt) {
-  public static CommentResponse from(Comment c) {
-    return new CommentResponse(
+    OffsetDateTime updatedAt,
+    List<CommentTreeResponse> children) {
+
+  public static CommentTreeResponse from(Comment c, List<Comment> replies) {
+    return new CommentTreeResponse(
         c.getId(),
         c.getBoard().getId(),
         c.getParent() != null ? c.getParent().getId() : null,
@@ -25,6 +28,7 @@ public record CommentResponse(
         c.getUpdatedBy() != null ? c.getUpdatedBy().getDisplayName() : null,
         c.getContent(),
         c.getCreatedAt(),
-        c.getUpdatedAt());
+        c.getUpdatedAt(),
+        replies.stream().map(r -> CommentTreeResponse.from(r, List.of())).toList());
   }
 }

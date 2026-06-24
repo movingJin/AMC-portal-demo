@@ -22,6 +22,10 @@ public class Comment extends BaseTimeEntity {
   @JoinColumn(name = "board_id", nullable = false)
   private Board board;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "parent_id")
+  private Comment parent;
+
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "created_by", nullable = false)
   private User createdBy;
@@ -35,8 +39,9 @@ public class Comment extends BaseTimeEntity {
   private String content;
 
   @Builder
-  public Comment(Board board, User createdBy, String content) {
+  public Comment(Board board, Comment parent, User createdBy, String content) {
     this.board = board;
+    this.parent = parent;
     this.createdBy = createdBy;
     this.content = content;
   }

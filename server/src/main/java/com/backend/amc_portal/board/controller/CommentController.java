@@ -2,6 +2,7 @@ package com.backend.amc_portal.board.controller;
 
 import com.backend.amc_portal.board.dto.CommentRequest;
 import com.backend.amc_portal.board.dto.CommentResponse;
+import com.backend.amc_portal.board.dto.CommentTreeResponse;
 import com.backend.amc_portal.board.service.CommentService;
 import com.backend.amc_portal.common.dto.ApiResponse;
 import com.backend.amc_portal.common.security.UserPrincipal;
@@ -18,7 +19,7 @@ public class CommentController {
   private final CommentService commentService;
 
   @GetMapping("/api/board/{boardId}/comments")
-  public ApiResponse<List<CommentResponse>> list(@PathVariable Long boardId) {
+  public ApiResponse<List<CommentTreeResponse>> list(@PathVariable Long boardId) {
     return ApiResponse.ok(commentService.list(boardId));
   }
 

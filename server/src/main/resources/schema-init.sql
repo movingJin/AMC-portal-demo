@@ -101,17 +101,19 @@ CREATE INDEX IF NOT EXISTS idx_board_file_downloads_file_id  ON portal.board_fil
 CREATE INDEX IF NOT EXISTS idx_board_file_downloads_board_id ON portal.board_file_downloads (board_id);
 CREATE INDEX IF NOT EXISTS idx_board_file_downloads_user_id  ON portal.board_file_downloads (user_id);
 
--- comments (댓글)
+-- comments (댓글/대댓글)
 CREATE TABLE IF NOT EXISTS portal.comments (
     id          BIGSERIAL PRIMARY KEY,
     board_id    BIGINT NOT NULL REFERENCES portal.boards(id) ON DELETE CASCADE,
+    parent_id   BIGINT      REFERENCES portal.comments(id) ON DELETE CASCADE,
     created_by  BIGINT NOT NULL REFERENCES portal.users(id) ON DELETE CASCADE,
     content     TEXT NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by  BIGINT      REFERENCES portal.users(id)
 );
-CREATE INDEX IF NOT EXISTS idx_comments_board_id ON portal.comments (board_id);
+CREATE INDEX IF NOT EXISTS idx_comments_board_id  ON portal.comments (board_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON portal.comments (parent_id);
 
 -- updated_at 자동 갱신 트리거
 CREATE OR REPLACE FUNCTION portal.set_updated_at() RETURNS TRIGGER AS $$
