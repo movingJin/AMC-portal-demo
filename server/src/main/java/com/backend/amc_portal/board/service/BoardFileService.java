@@ -65,7 +65,7 @@ public class BoardFileService {
           "첨부파일은 최대 " + maxCount + "개까지 등록할 수 있습니다. (현재 " + currentCount + "개)");
     }
 
-    User actor = board.getAuthor();
+    User actor = board.getCreatedBy();
     return files.stream()
         .map(file -> saveFile(board, file, actor))
         .map(BoardFileResponse::from)
@@ -138,7 +138,7 @@ public class BoardFileService {
             .storagePath(boardFile.getStoragePath())
             .fileSize(boardFile.getFileSize())
             .contentType(boardFile.getContentType())
-            .actedBy(boardFile.getBoard().getAuthor())
+            .actedBy(boardFile.getBoard().getCreatedBy())
             .build());
 
     boardFileRepository.delete(boardFile);
@@ -211,7 +211,7 @@ public class BoardFileService {
   }
 
   private void checkOwner(Board board, Long userId) {
-    if (!board.getAuthor().getId().equals(userId)) {
+    if (!board.getCreatedBy().getId().equals(userId)) {
       throw ApiException.forbidden("권한이 없습니다.");
     }
   }

@@ -31,8 +31,8 @@ type Board = {
   id: number
   title: string
   content: string
-  authorId: number
-  authorName: string
+  createdById: number
+  createdByName: string
   viewCount: number
   files: BoardFile[]
   createdAt: string
@@ -42,8 +42,8 @@ type Board = {
 type Comment = {
   id: number
   boardId: number
-  authorId: number
-  authorName: string
+  createdById: number
+  createdByName: string
   content: string
   createdAt: string
 }
@@ -123,7 +123,7 @@ export default function BoardDetailPage() {
   }
 
   const files = board.files ?? []
-  const isOwner = user?.id === board.authorId
+  const isOwner = user?.id === board.createdById
 
   const modalTitle = historyModal?.type === 'history' ? '첨부파일 이력' : '다운로드 이력'
 
@@ -238,9 +238,9 @@ export default function BoardDetailPage() {
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
               <span className="inline-flex items-center gap-2">
                 <span className="grid place-items-center w-6 h-6 rounded-full bg-ink-100 text-ink-700 text-[10px] font-semibold">
-                  {board.authorName?.[0]?.toUpperCase() ?? '?'}
+                  {board.createdByName?.[0]?.toUpperCase() ?? '?'}
                 </span>
-                <span className="text-ink-700">{board.authorName}</span>
+                <span className="text-ink-700">{board.createdByName}</span>
               </span>
               <span className="text-ink-300">·</span>
               <span className="text-ink-500">
@@ -304,11 +304,11 @@ export default function BoardDetailPage() {
               {comments.map((c) => (
                 <li key={c.id} className="flex gap-3 items-start">
                   <span className="grid place-items-center w-8 h-8 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold shrink-0">
-                    {c.authorName?.[0]?.toUpperCase() ?? '?'}
+                    {c.createdByName?.[0]?.toUpperCase() ?? '?'}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-medium text-ink-800">{c.authorName}</span>
+                      <span className="text-sm font-medium text-ink-800">{c.createdByName}</span>
                       <span className="text-xs text-ink-400">
                         {new Date(c.createdAt).toLocaleString('ko-KR')}
                       </span>
@@ -317,7 +317,7 @@ export default function BoardDetailPage() {
                       {c.content}
                     </p>
                   </div>
-                  {user?.id === c.authorId && (
+                  {user?.id === c.createdById && (
                     <button
                       onClick={() => removeComment(c.id)}
                       className="text-xs text-ink-400 hover:text-red-600 transition"

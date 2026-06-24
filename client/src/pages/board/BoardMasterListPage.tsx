@@ -7,7 +7,7 @@ import Pagination from '@/components/Pagination'
 type BoardMaster = {
   id: number
   title: string
-  authorName: string
+  createdByName: string
   useYn: boolean
   createdAt: string
 }
@@ -156,7 +156,7 @@ export default function BoardMasterListPage() {
                   {page * PAGE_SIZE + idx + 1}
                 </td>
                 <td className="px-5 py-3.5 font-medium text-ink-800">{bm.title}</td>
-                <td className="px-5 py-3.5 text-ink-600">{bm.authorName}</td>
+                <td className="px-5 py-3.5 text-ink-600">{bm.createdByName}</td>
                 <td className="px-5 py-3.5 text-ink-500">{formatDate(bm.createdAt)}</td>
                 <td className="px-5 py-3.5 text-center">
                   <button

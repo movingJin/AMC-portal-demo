@@ -86,7 +86,7 @@ public class BoardService {
             Board.builder()
                 .title(req.title())
                 .content(req.content())
-                .author(user)
+                .createdBy(user)
                 .boardMaster(boardMaster)
                 .build());
 
@@ -102,8 +102,12 @@ public class BoardService {
             .findById(boardId)
             .filter(b -> !b.isDeleted())
             .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    checkOwner(board.getAuthor().getId(), userId);
-    board.update(req.title(), req.content());
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+    checkOwner(board.getCreatedBy().getId(), userId);
+    board.update(req.title(), req.content(), user);
 
     List<Long> deleteIds = req.deleteFileIds() != null ? req.deleteFileIds() : List.of();
     deleteIds.forEach(
@@ -116,7 +120,7 @@ public class BoardService {
                       boardFileRepository.delete(bf);
                     }));
 
-    persistFiles(board, files, board.getBoardMaster(), board.getAuthor());
+    persistFiles(board, files, board.getBoardMaster(), user);
 
     List<BoardFileResponse> remaining =
         boardFileRepository.findByBoardIdOrderByIdAsc(boardId).stream()
@@ -132,8 +136,12 @@ public class BoardService {
             .findById(boardId)
             .filter(b -> !b.isDeleted())
             .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    checkOwner(board.getAuthor().getId(), userId);
-    board.softDelete();
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+    checkOwner(board.getCreatedBy().getId(), userId);
+    board.softDelete(user);
   }
 
   private List<BoardFileResponse> persistFiles(
@@ -208,7 +216,7 @@ public class BoardService {
             .storagePath(bf.getStoragePath())
             .fileSize(bf.getFileSize())
             .contentType(bf.getContentType())
-            .actedBy(board.getAuthor())
+            .actedBy(board.getCreatedBy())
             .build());
   }
 

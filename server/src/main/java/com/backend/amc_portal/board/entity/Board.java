@@ -26,8 +26,12 @@ public class Board extends BaseTimeEntity {
   private String content;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "author_id", nullable = false)
-  private User author;
+  @JoinColumn(name = "created_by", nullable = false)
+  private User createdBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "updated_by")
+  private User updatedBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "board_master_id")
@@ -39,25 +43,31 @@ public class Board extends BaseTimeEntity {
   @Column(name = "deleted_at")
   private OffsetDateTime deletedAt;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "deleted_by")
+  private User deletedBy;
+
   @Builder
-  public Board(String title, String content, User author, BoardMaster boardMaster) {
+  public Board(String title, String content, User createdBy, BoardMaster boardMaster) {
     this.title = title;
     this.content = content;
-    this.author = author;
+    this.createdBy = createdBy;
     this.boardMaster = boardMaster;
   }
 
-  public void update(String title, String content) {
+  public void update(String title, String content, User updatedBy) {
     this.title = title;
     this.content = content;
+    this.updatedBy = updatedBy;
   }
 
   public void incrementViewCount() {
     this.viewCount++;
   }
 
-  public void softDelete() {
+  public void softDelete(User deletedBy) {
     this.deletedAt = OffsetDateTime.now();
+    this.deletedBy = deletedBy;
   }
 
   public boolean isDeleted() {

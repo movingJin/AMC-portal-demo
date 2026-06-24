@@ -23,21 +23,26 @@ public class Comment extends BaseTimeEntity {
   private Board board;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "author_id", nullable = false)
-  private User author;
+  @JoinColumn(name = "created_by", nullable = false)
+  private User createdBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "updated_by")
+  private User updatedBy;
 
   @Lob
   @Column(nullable = false, columnDefinition = "text")
   private String content;
 
   @Builder
-  public Comment(Board board, User author, String content) {
+  public Comment(Board board, User createdBy, String content) {
     this.board = board;
-    this.author = author;
+    this.createdBy = createdBy;
     this.content = content;
   }
 
-  public void updateContent(String content) {
+  public void updateContent(String content, User updatedBy) {
     this.content = content;
+    this.updatedBy = updatedBy;
   }
 }

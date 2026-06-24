@@ -9,8 +9,8 @@ type BoardMaster = { id: number; title: string }
 type Board = {
   id: number
   title: string
-  authorId: number
-  authorName: string
+  createdById: number
+  createdByName: string
   viewCount: number
   createdAt: string
 }
@@ -140,7 +140,7 @@ export default function BoardListPage() {
                     {b.title}
                   </Link>
                 </td>
-                <td className="px-5 py-3.5 text-ink-600">{b.authorName}</td>
+                <td className="px-5 py-3.5 text-ink-600">{b.createdByName}</td>
                 <td className="px-5 py-3.5 text-right tabular-nums text-ink-500">
                   {b.viewCount.toLocaleString()}
                 </td>

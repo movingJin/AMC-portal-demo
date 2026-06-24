@@ -39,7 +39,7 @@ public class CommentService {
         boardRepository
             .findById(boardId)
             .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    Comment c = Comment.builder().board(board).author(user).content(req.content()).build();
+    Comment c = Comment.builder().board(board).createdBy(user).content(req.content()).build();
     return CommentResponse.from(commentRepository.save(c));
   }
 
@@ -49,8 +49,12 @@ public class CommentService {
         commentRepository
             .findById(commentId)
             .orElseThrow(() -> ApiException.notFound("댓글을 찾을 수 없습니다."));
-    if (!c.getAuthor().getId().equals(userId)) throw ApiException.forbidden("권한이 없습니다.");
-    c.updateContent(req.content());
+    if (!c.getCreatedBy().getId().equals(userId)) throw ApiException.forbidden("권한이 없습니다.");
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+    c.updateContent(req.content(), user);
     return CommentResponse.from(c);
   }
 
@@ -60,7 +64,7 @@ public class CommentService {
         commentRepository
             .findById(commentId)
             .orElseThrow(() -> ApiException.notFound("댓글을 찾을 수 없습니다."));
-    if (!c.getAuthor().getId().equals(userId)) throw ApiException.forbidden("권한이 없습니다.");
+    if (!c.getCreatedBy().getId().equals(userId)) throw ApiException.forbidden("권한이 없습니다.");
     commentRepository.delete(c);
   }
 }

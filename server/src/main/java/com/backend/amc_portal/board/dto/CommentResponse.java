@@ -6,8 +6,10 @@ import java.time.OffsetDateTime;
 public record CommentResponse(
     Long id,
     Long boardId,
-    Long authorId,
-    String authorName,
+    Long createdById,
+    String createdByName,
+    Long updatedById,
+    String updatedByName,
     String content,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt) {
@@ -15,8 +17,10 @@ public record CommentResponse(
     return new CommentResponse(
         c.getId(),
         c.getBoard().getId(),
-        c.getAuthor().getId(),
-        c.getAuthor().getDisplayName(),
+        c.getCreatedBy().getId(),
+        c.getCreatedBy().getDisplayName(),
+        c.getUpdatedBy() != null ? c.getUpdatedBy().getId() : null,
+        c.getUpdatedBy() != null ? c.getUpdatedBy().getDisplayName() : null,
         c.getContent(),
         c.getCreatedAt(),
         c.getUpdatedAt());

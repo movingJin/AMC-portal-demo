@@ -35,8 +35,10 @@ public class BoardMasterController {
 
   @PutMapping("/{id}")
   public ApiResponse<BoardMasterResponse> update(
-      @PathVariable Long id, @Valid @RequestBody BoardMasterRequest req) {
-    return ApiResponse.ok(boardMasterService.update(id, req));
+      @AuthenticationPrincipal UserPrincipal p,
+      @PathVariable Long id,
+      @Valid @RequestBody BoardMasterRequest req) {
+    return ApiResponse.ok(boardMasterService.update(p.id(), id, req));
   }
 
   @PostMapping
