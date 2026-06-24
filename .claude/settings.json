@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[프로젝트 규칙 — 필독] 이 레포에서 코드를 작성·수정·리뷰·설계하기 전에, 반드시 convention-mcp MCP 서버의 get_development_guide(전체) 또는 search_development_guide(query)(주제별) tool을 먼저 호출해 관련 규칙을 확인하라. 규칙을 확인하지 않은 채 추측으로 진행하지 말 것. tool을 사용할 수 없으면 사용자에게 MCP 서버 연결을 요청하라.'",
+            "statusMessage": "규칙 참조 리마인더 주입"
+          }
+        ]
+      }
+    ]
+  }
+}
