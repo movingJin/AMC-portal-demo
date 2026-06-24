@@ -29,6 +29,7 @@ type HistoryModal =
   | null
 
 type BoardMaster = {
+  fileYn: boolean
   commentYn: boolean
 }
 
@@ -291,7 +292,7 @@ export default function BoardDetailPage() {
             dangerouslySetInnerHTML={{ __html: board.content }}
           />
 
-          {files.length > 0 && (
+          {boardMaster?.fileYn && files.length > 0 && (
             <div className="mt-8 pt-5 border-t border-ink-100 space-y-3">
               {isOwner && (
                 <div className="flex gap-2">

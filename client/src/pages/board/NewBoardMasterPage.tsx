@@ -108,12 +108,12 @@ export default function NewBoardMasterPage() {
       if (isEdit) {
         await api(`/api/board-master/${id}`, {
           method: 'PUT',
-          body: JSON.stringify({ ...form, fileMaxCount: form.fileYn ? form.fileMaxCount : 0 }),
+          body: JSON.stringify(form),
         })
       } else {
         await api('/api/board-master', {
           method: 'POST',
-          body: JSON.stringify({ ...form, fileMaxCount: form.fileYn ? form.fileMaxCount : 0 }),
+          body: JSON.stringify(form),
         })
       }
       navigate('/board-master')
@@ -184,7 +184,17 @@ export default function NewBoardMasterPage() {
             </div>
             <div className="space-y-3">
               <div className="space-y-2">
-                <Toggle value={form.fileYn} onChange={set('fileYn')} label="첨부파일 사용" />
+                <Toggle
+                  value={form.fileYn}
+                  onChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      fileYn: v,
+                      fileMaxCount: v ? f.fileMaxCount || 1 : f.fileMaxCount,
+                    }))
+                  }
+                  label="첨부파일 사용"
+                />
                 {form.fileYn && (
                   <div className="flex items-center gap-2 pl-12">
                     <label className="text-sm text-ink-600 shrink-0">최대 파일 개수</label>
