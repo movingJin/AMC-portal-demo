@@ -73,28 +73,39 @@ public class BoardService {
 
   @Transactional
   public BoardResponse create(Long userId, BoardRequest req, List<MultipartFile> files) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
-    BoardMaster boardMaster = boardMasterRepository.findById(req.boardMasterId())
-        .orElseThrow(() -> ApiException.notFound("게시판을 찾을 수 없습니다."));
-    Board board = boardRepository.save(Board.builder()
-        .title(req.title())
-        .content(req.content())
-        .createdBy(user)
-        .boardMaster(boardMaster)
-        .build());
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+    BoardMaster boardMaster =
+        boardMasterRepository
+            .findById(req.boardMasterId())
+            .orElseThrow(() -> ApiException.notFound("게시판을 찾을 수 없습니다."));
+    Board board =
+        boardRepository.save(
+            Board.builder()
+                .title(req.title())
+                .content(req.content())
+                .createdBy(user)
+                .boardMaster(boardMaster)
+                .build());
 
     List<BoardFileResponse> savedFiles = persistFiles(board, files, boardMaster, user);
     return BoardResponse.from(board, savedFiles);
   }
 
   @Transactional
-  public BoardResponse update(Long userId, Long boardId, BoardRequest req, List<MultipartFile> files) {
-    Board board = boardRepository.findById(boardId)
-        .filter(b -> !b.isDeleted())
-        .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+  public BoardResponse update(
+      Long userId, Long boardId, BoardRequest req, List<MultipartFile> files) {
+    Board board =
+        boardRepository
+            .findById(boardId)
+            .filter(b -> !b.isDeleted())
+            .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
     checkOwner(board.getCreatedBy().getId(), userId);
     board.update(req.title(), req.content(), user);
 
@@ -120,11 +131,15 @@ public class BoardService {
 
   @Transactional
   public void delete(Long userId, Long boardId) {
-    Board board = boardRepository.findById(boardId)
-        .filter(b -> !b.isDeleted())
-        .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
+    Board board =
+        boardRepository
+            .findById(boardId)
+            .filter(b -> !b.isDeleted())
+            .orElseThrow(() -> ApiException.notFound("게시글을 찾을 수 없습니다."));
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
     checkOwner(board.getCreatedBy().getId(), userId);
     board.softDelete(user);
   }
@@ -191,11 +206,18 @@ public class BoardService {
   }
 
   private void saveDeleteHistory(BoardFile bf, Board board) {
-    boardFileHistoryRepository.save(BoardFileHistory.builder()
-        .fileId(bf.getId()).board(board).eventType(BoardFileEventType.DELETE)
-        .originalName(bf.getOriginalName()).storedName(bf.getStoredName())
-        .storagePath(bf.getStoragePath()).fileSize(bf.getFileSize())
-        .contentType(bf.getContentType()).actedBy(board.getCreatedBy()).build());
+    boardFileHistoryRepository.save(
+        BoardFileHistory.builder()
+            .fileId(bf.getId())
+            .board(board)
+            .eventType(BoardFileEventType.DELETE)
+            .originalName(bf.getOriginalName())
+            .storedName(bf.getStoredName())
+            .storagePath(bf.getStoragePath())
+            .fileSize(bf.getFileSize())
+            .contentType(bf.getContentType())
+            .actedBy(board.getCreatedBy())
+            .build());
   }
 
   private void checkOwner(Long ownerId, Long actorId) {

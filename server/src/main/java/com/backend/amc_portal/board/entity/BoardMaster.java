@@ -30,8 +30,12 @@ public class BoardMaster extends BaseTimeEntity {
   private BoardType boardType;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "author_id", nullable = false)
-  private User author;
+  @JoinColumn(name = "created_by", nullable = false)
+  private User createdBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "updated_by")
+  private User updatedBy;
 
   @Column(nullable = false)
   private boolean fileYn = false;
@@ -50,7 +54,7 @@ public class BoardMaster extends BaseTimeEntity {
       String title,
       String description,
       BoardType boardType,
-      User author,
+      User createdBy,
       boolean fileYn,
       int fileMaxCount,
       boolean commentYn,
@@ -58,7 +62,7 @@ public class BoardMaster extends BaseTimeEntity {
     this.title = title;
     this.description = description;
     this.boardType = boardType;
-    this.author = author;
+    this.createdBy = createdBy;
     this.fileYn = fileYn;
     this.fileMaxCount = fileMaxCount;
     this.commentYn = commentYn;
@@ -71,13 +75,15 @@ public class BoardMaster extends BaseTimeEntity {
       boolean fileYn,
       int fileMaxCount,
       boolean commentYn,
-      boolean useYn) {
+      boolean useYn,
+      User updatedBy) {
     this.title = title;
     this.description = description;
     this.fileYn = fileYn;
     this.fileMaxCount = fileMaxCount;
     this.commentYn = commentYn;
     this.useYn = useYn;
+    this.updatedBy = updatedBy;
   }
 
   public void toggleUseYn() {

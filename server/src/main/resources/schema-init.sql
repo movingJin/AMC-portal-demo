@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS portal.users (
     role           VARCHAR(30)  NOT NULL DEFAULT 'USER',
     status         VARCHAR(30)  NOT NULL DEFAULT 'PENDING_VERIFICATION',
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now()
+    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_by     BIGINT       REFERENCES portal.users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_users_email ON portal.users (email);
 
@@ -24,13 +25,14 @@ CREATE TABLE IF NOT EXISTS portal.board_masters (
     description     VARCHAR(500),
     type            VARCHAR(20)   NOT NULL DEFAULT 'GENERAL'
         CHECK (type IN ('GENERAL', 'BLOG', 'GUESTBOOK')),
-    author_id       BIGINT        NOT NULL REFERENCES portal.users(id),
     file_yn         BOOLEAN       NOT NULL DEFAULT FALSE,
     file_max_count  INTEGER       NOT NULL DEFAULT 0,
     comment_yn      BOOLEAN       NOT NULL DEFAULT FALSE,
     use_yn          BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
+    created_by      BIGINT        NOT NULL REFERENCES portal.users(id),
+    updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_by      BIGINT        REFERENCES portal.users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_board_masters_type ON portal.board_masters (type);
 
@@ -39,17 +41,18 @@ CREATE TABLE IF NOT EXISTS portal.boards (
     id              BIGSERIAL PRIMARY KEY,
     title           VARCHAR(200) NOT NULL,
     content         TEXT NOT NULL,
-    author_id       BIGINT NOT NULL REFERENCES portal.users(id) ON DELETE CASCADE,
     board_master_id BIGINT REFERENCES portal.board_masters(id),
     view_count      BIGINT NOT NULL DEFAULT 0,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by      BIGINT NOT NULL REFERENCES portal.users(id) ON DELETE CASCADE,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    deleted_at      TIMESTAMPTZ DEFAULT NULL
+    updated_by      BIGINT      REFERENCES portal.users(id),
+    deleted_at      TIMESTAMPTZ DEFAULT NULL,
+    deleted_by      BIGINT      REFERENCES portal.users(id)
 );
 -- 기존 DB에 컬럼 추가 (이미 테이블이 존재하는 경우)
-ALTER TABLE portal.boards ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
 CREATE INDEX IF NOT EXISTS idx_boards_created_at ON portal.boards (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_boards_author_id ON portal.boards (author_id);
+CREATE INDEX IF NOT EXISTS idx_boards_created_by ON portal.boards (created_by);
 CREATE INDEX IF NOT EXISTS idx_boards_board_master_id ON portal.boards (board_master_id);
 
 -- board_files (첨부파일)
@@ -102,10 +105,11 @@ CREATE INDEX IF NOT EXISTS idx_board_file_downloads_user_id  ON portal.board_fil
 CREATE TABLE IF NOT EXISTS portal.comments (
     id          BIGSERIAL PRIMARY KEY,
     board_id    BIGINT NOT NULL REFERENCES portal.boards(id) ON DELETE CASCADE,
-    author_id   BIGINT NOT NULL REFERENCES portal.users(id) ON DELETE CASCADE,
+    created_by  BIGINT NOT NULL REFERENCES portal.users(id) ON DELETE CASCADE,
     content     TEXT NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by  BIGINT      REFERENCES portal.users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_comments_board_id ON portal.comments (board_id);
 

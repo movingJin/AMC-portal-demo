@@ -128,17 +128,18 @@ public class BoardFileService {
     BoardFile boardFile = findFile(fileId);
     checkOwner(boardFile.getBoard(), userId);
 
-    historyRepository.save(BoardFileHistory.builder()
-        .fileId(boardFile.getId())
-        .board(boardFile.getBoard())
-        .eventType(BoardFileEventType.DELETE)
-        .originalName(boardFile.getOriginalName())
-        .storedName(boardFile.getStoredName())
-        .storagePath(boardFile.getStoragePath())
-        .fileSize(boardFile.getFileSize())
-        .contentType(boardFile.getContentType())
-        .actedBy(boardFile.getBoard().getCreatedBy())
-        .build());
+    historyRepository.save(
+        BoardFileHistory.builder()
+            .fileId(boardFile.getId())
+            .board(boardFile.getBoard())
+            .eventType(BoardFileEventType.DELETE)
+            .originalName(boardFile.getOriginalName())
+            .storedName(boardFile.getStoredName())
+            .storagePath(boardFile.getStoragePath())
+            .fileSize(boardFile.getFileSize())
+            .contentType(boardFile.getContentType())
+            .actedBy(boardFile.getBoard().getCreatedBy())
+            .build());
 
     boardFileRepository.delete(boardFile);
   }

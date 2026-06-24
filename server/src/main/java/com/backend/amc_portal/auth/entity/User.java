@@ -37,6 +37,10 @@ public class User extends BaseTimeEntity {
   @Column(nullable = false, length = 30)
   private UserStatus status = UserStatus.PENDING_VERIFICATION;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "updated_by")
+  private User updatedBy;
+
   @Builder
   public User(
       String email, String displayName, String passwordHash, UserRole role, UserStatus status) {

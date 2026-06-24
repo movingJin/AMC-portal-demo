@@ -40,7 +40,11 @@ public class BoardMasterService {
   }
 
   @Transactional
-  public BoardMasterResponse update(Long id, BoardMasterRequest req) {
+  public BoardMasterResponse update(Long userId, Long id, BoardMasterRequest req) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> ApiException.unauthorized("사용자를 찾을 수 없습니다."));
     BoardMaster bm =
         boardMasterRepository
             .findById(id)
@@ -51,7 +55,8 @@ public class BoardMasterService {
         req.fileYn(),
         req.fileMaxCount(),
         req.commentYn(),
-        req.useYn());
+        req.useYn(),
+        user);
     return BoardMasterResponse.from(bm);
   }
 
@@ -66,7 +71,7 @@ public class BoardMasterService {
             .title(req.title())
             .description(req.description())
             .boardType(req.type())
-            .author(user)
+            .createdBy(user)
             .fileYn(req.fileYn())
             .fileMaxCount(req.fileMaxCount())
             .commentYn(req.commentYn())
