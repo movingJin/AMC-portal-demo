@@ -1,4 +1,4 @@
-package com.backend.amc_portal.auth.dto;
+package com.backend.amc_portal.auth.legacy.dto;
 
 public record TokenResponse(
     String accessToken, String refreshToken, long accessTokenExpiresIn, UserSummary user) {

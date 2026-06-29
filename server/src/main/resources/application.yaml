@@ -1,4 +1,7 @@
 spring:
+  profiles:
+    active: ${AUTH_PROVIDER:keycloak}
+
   application:
     name: amc-portal
   # .env 는 me.paulschwarz:spring-dotenv 가 자동 로드.
@@ -18,7 +21,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -34,18 +37,6 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${SENDER_EMAIL}
-    password: ${SENDER_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
 server:
   port: 8080
   error:
@@ -57,15 +48,6 @@ logging:
     com.backend.amc_portal: DEBUG
 
 app:
-  jwt:
-    secret: ${JWT_SECRET:}
-    access-token-ttl-seconds: 1800
-    refresh-token-ttl-seconds: 1209600
-  auth:
-    require-email-verification: true
-    email-verification-ttl-seconds: 600
-    password-reset-ttl-seconds: 1800
-    reset-link-base: ${RESET_LINK_BASE:http://localhost:3000/reset-password}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
   nl2sql:

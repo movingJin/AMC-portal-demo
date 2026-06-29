@@ -1,5 +1,5 @@
 {
   "mcpServers": {
-    "convention-mcp": { "type": "http", "url": "http://localhost:8765/mcp" }
+    "convention-mcp": { "type": "http", "url": "https://convention-mcp.movingjin.com/mcp", "headers": { "Authorization": "Bearer cmk_ccn_x5_r0kGqsLJgn784FazqnXVTvX0_" } }
   }
 }

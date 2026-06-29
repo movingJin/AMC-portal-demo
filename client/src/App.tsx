@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Navbar from '@/components/Navbar'
 import HomePage from '@/pages/common/HomePage'
 import LoginPage from '@/pages/auth/LoginPage'
+import AuthCallbackPage from '@/pages/auth/AuthCallbackPage'
 import SignupPage from '@/pages/auth/SignupPage'
 import VerifyEmailPage from '@/pages/auth/VerifyEmailPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
@@ -13,6 +14,8 @@ import ChatbotPage from '@/pages/chatbot/ChatbotPage'
 import BoardMasterListPage from '@/pages/board/BoardMasterListPage'
 import NewBoardMasterPage from '@/pages/board/NewBoardMasterPage'
 
+const isLegacyAuth = import.meta.env.VITE_AUTH_PROVIDER === 'legacy'
+
 export default function App() {
   return (
     <div className="min-h-screen bg-[var(--bg)] text-ink-900">
@@ -22,10 +25,16 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          {isLegacyAuth ? (
+            <>
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+            </>
+          ) : (
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          )}
           <Route path="/board/:boardMasterId" element={<BoardListPage />} />
           <Route path="/board/:boardMasterId/new" element={<NewBoardPage />} />
           <Route path="/board/:boardMasterId/post/:postId" element={<BoardDetailPage />} />

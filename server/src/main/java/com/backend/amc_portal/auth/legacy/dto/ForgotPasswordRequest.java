@@ -1,4 +1,4 @@
-package com.backend.amc_portal.auth.dto;
+package com.backend.amc_portal.auth.legacy.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

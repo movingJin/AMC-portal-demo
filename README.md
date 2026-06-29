@@ -109,7 +109,7 @@ AMC-portal-demo/
 | Backend | Spring Boot 3.5.14, Java 21, Gradle (Groovy DSL), Lombok |
 | DB Access | Spring Data JPA + QueryDSL |
 | DB | PostgreSQL |
-| 인증 | Spring Security + JWT (HS256) |
+| 인증 | Keycloak (OIDC) 또는 자체 Spring Security + JWT(HS256) — `.env` 토글, 기본값 Keycloak |
 | Frontend | Vite + React 19 + TypeScript + React Router + Tailwind |
 | Grid / Chart | AG Grid + Recharts |
 | LLM | Azure OpenAI (function calling) |
@@ -151,6 +151,13 @@ REDIS_HOST=<redis-host>
 REDIS_PORT=<redis-port>
 REDIS_PASSWORD=<redis-password>
 
+# 인증 방식 선택: keycloak(기본) | legacy — 아래 "인증 방식 전환" 절 참고
+AUTH_PROVIDER=keycloak
+
+# --- keycloak 모드일 때만 필요 ---
+KEYCLOAK_ISSUER_URI=https://<keycloak-host>/realms/<realm>
+
+# --- legacy 모드일 때만 필요 ---
 # JWT 서명 비밀키 (HS256+, 32바이트 이상 권장)
 # 생성 예: openssl rand -base64 48
 JWT_SECRET=<random-secret>
@@ -170,7 +177,28 @@ AZURE_OPENAI_EMBEDDING=<embedding-deployment-name>
 LOG_LEVEL=INFO
 ```
 
-> `application.yaml`의 `ddl-auto: validate` 설정상 스키마 DDL이 먼저 적용되어야 부팅에 성공합니다.
+> `application.yaml`의 `ddl-auto: update` 설정으로 부팅 시 엔티티 기준 스키마가 자동 반영됩니다.
+
+## 인증 방식 전환 (Keycloak ↔ 자체 JWT)
+
+인증은 두 가지 방식 중 하나로 동작하며, 코드 변경 없이 `.env` 값만 바꿔서 전환합니다. 두 구현 모두 항상 컴파일되어 있고, Spring Profile로 런타임에 한쪽만 활성화됩니다.
+
+| 값 | 동작 | 비고 |
+|---|---|---|
+| `keycloak` (기본값) | Keycloak이 회원가입·로그인·이메일 인증을 전부 처리. 백엔드는 OAuth2 Resource Server로 토큰만 검증 | `KEYCLOAK_ISSUER_URI` 필요. 프론트는 `VITE_KEYCLOAK_URL`/`VITE_KEYCLOAK_REALM`/`VITE_KEYCLOAK_CLIENT_ID` 필요 |
+| `legacy` | 자체 Spring Security + JWT. Redis 기반 refresh token/블랙리스트, SMTP 이메일 인증코드 | `JWT_SECRET`, `SENDER_EMAIL`/`SENDER_PASSWORD` 필요. **Keycloak 서버가 죽었을 때의 개발용 대체 경로** |
+
+전환 방법:
+
+```bash
+# server/.env
+AUTH_PROVIDER=keycloak   # 또는 legacy
+
+# client/.env
+VITE_AUTH_PROVIDER=keycloak   # 또는 legacy
+```
+
+각각 값을 바꾸고 백엔드(`./gradlew bootRun`)와 프론트(`npm run dev`)를 재시작하면 적용됩니다. `legacy` 모드에서는 Keycloak 쪽으로 어떤 네트워크 호출도 발생하지 않습니다(`KEYCLOAK_ISSUER_URI` 자체를 프로필별 설정 파일로 분리해 두었기 때문).
 
 ### Client
 
@@ -191,7 +219,11 @@ npm run dev
 
 ## API 요약
 
-### Auth (`/api/auth/**`) — public
+### Auth (`/api/auth/**`)
+
+- `GET /me` (Bearer) — 두 모드 공통
+
+`AUTH_PROVIDER=legacy`일 때만 존재 (public):
 
 - `POST /signup` `{email, password, displayName}`
 - `POST /verify-email` `{email, code}` — 회원가입 시 발송된 6자리 코드
@@ -200,7 +232,8 @@ npm run dev
 - `POST /logout` (Bearer) — access 토큰 블랙리스트 + refresh 폐기
 - `POST /forgot-password` `{email}`
 - `POST /reset-password` `{token, newPassword}`
-- `GET /me` (Bearer)
+
+`AUTH_PROVIDER=keycloak`(기본값)일 때는 위 엔드포인트들이 존재하지 않고, 회원가입/로그인/이메일 인증은 Keycloak Hosted UI에서 처리됩니다.
 
 ### Board (`/api/board/**`)
 

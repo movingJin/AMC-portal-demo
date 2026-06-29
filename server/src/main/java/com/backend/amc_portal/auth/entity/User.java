@@ -20,13 +20,16 @@ public class User extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Column(unique = true, length = 64)
+  private String keycloakId;
+
   @Column(nullable = false, length = 255)
   private String email;
 
   @Column(nullable = false, length = 100)
   private String displayName;
 
-  @Column(nullable = false, length = 255)
+  @Column(length = 255)
   private String passwordHash;
 
   @Enumerated(EnumType.STRING)
@@ -43,12 +46,29 @@ public class User extends BaseTimeEntity {
 
   @Builder
   public User(
-      String email, String displayName, String passwordHash, UserRole role, UserStatus status) {
+      String keycloakId,
+      String email,
+      String displayName,
+      String passwordHash,
+      UserRole role,
+      UserStatus status) {
+    this.keycloakId = keycloakId;
     this.email = email;
     this.displayName = displayName;
     this.passwordHash = passwordHash;
     this.role = role != null ? role : UserRole.USER;
     this.status = status != null ? status : UserStatus.PENDING_VERIFICATION;
+  }
+
+  public static User fromKeycloak(
+      String keycloakId, String email, String displayName, UserRole role) {
+    return User.builder()
+        .keycloakId(keycloakId)
+        .email(email)
+        .displayName(displayName)
+        .role(role)
+        .status(UserStatus.ACTIVE)
+        .build();
   }
 
   public void activate() {
@@ -61,5 +81,14 @@ public class User extends BaseTimeEntity {
 
   public void updateDisplayName(String name) {
     this.displayName = name;
+  }
+
+  public void syncFromKeycloak(String displayName, UserRole role) {
+    if (displayName != null && !displayName.equals(this.displayName)) {
+      this.displayName = displayName;
+    }
+    if (role != null && role != this.role) {
+      this.role = role;
+    }
   }
 }

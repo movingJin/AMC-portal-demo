@@ -1,24 +1,32 @@
-package com.backend.amc_portal.auth.service;
+package com.backend.amc_portal.auth.legacy.service;
 
-import com.backend.amc_portal.auth.dto.*;
 import com.backend.amc_portal.auth.entity.User;
 import com.backend.amc_portal.auth.entity.UserRole;
 import com.backend.amc_portal.auth.entity.UserStatus;
+import com.backend.amc_portal.auth.legacy.dto.ForgotPasswordRequest;
+import com.backend.amc_portal.auth.legacy.dto.LoginRequest;
+import com.backend.amc_portal.auth.legacy.dto.RefreshTokenRequest;
+import com.backend.amc_portal.auth.legacy.dto.ResetPasswordRequest;
+import com.backend.amc_portal.auth.legacy.dto.SignupRequest;
+import com.backend.amc_portal.auth.legacy.dto.TokenResponse;
+import com.backend.amc_portal.auth.legacy.dto.VerifyEmailRequest;
 import com.backend.amc_portal.auth.repository.UserRepository;
 import com.backend.amc_portal.common.exception.ApiException;
-import com.backend.amc_portal.common.security.JwtTokenProvider;
+import com.backend.amc_portal.common.security.legacy.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import java.security.SecureRandom;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+@Profile("legacy")
 @RequiredArgsConstructor
 public class AuthService {
 

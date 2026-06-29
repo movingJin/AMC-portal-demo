@@ -1,11 +1,13 @@
-package com.backend.amc_portal.auth.service;
+package com.backend.amc_portal.auth.legacy.service;
 
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
+@Profile("legacy")
 @RequiredArgsConstructor
 public class RedisTokenService {
 

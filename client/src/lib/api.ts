@@ -1,4 +1,6 @@
 import { useAuth } from './auth'
+import { useAuth as useLegacyAuth } from './auth.legacy'
+import { login } from './keycloak'
 
 export type ApiResponse<T> = { success: boolean; data: T | null; message: string | null }
 
@@ -11,7 +13,9 @@ export class ApiError extends Error {
   }
 }
 
-const PUBLIC_AUTH_PATHS = [
+const isLegacy = import.meta.env.VITE_AUTH_PROVIDER === 'legacy'
+
+const LEGACY_PUBLIC_AUTH_PATHS = [
   '/login',
   '/signup',
   '/verify-email',
@@ -19,16 +23,16 @@ const PUBLIC_AUTH_PATHS = [
   '/reset-password',
 ]
 
-function redirectToLogin() {
+function legacyRedirectToLogin() {
   const { pathname, search } = window.location
-  if (PUBLIC_AUTH_PATHS.some((p) => pathname.startsWith(p))) return
+  if (LEGACY_PUBLIC_AUTH_PATHS.some((p) => pathname.startsWith(p))) return
   const here = pathname + search
   const target = here && here !== '/' ? `/login?redirect=${encodeURIComponent(here)}` : '/login'
   window.location.assign(target)
 }
 
-async function refreshIfPossible(): Promise<string | null> {
-  const { refreshToken, setTokens } = useAuth.getState()
+async function legacyRefreshIfPossible(): Promise<string | null> {
+  const { refreshToken, setTokens } = useLegacyAuth.getState()
   if (!refreshToken) return null
   try {
     const res = await fetch('/api/auth/refresh', {
@@ -49,6 +53,11 @@ async function refreshIfPossible(): Promise<string | null> {
   }
 }
 
+function keycloakIsAuthPage() {
+  const { pathname } = window.location
+  return pathname.startsWith('/login') || pathname.startsWith('/auth/callback')
+}
+
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const state = useAuth.getState()
   const headers = new Headers(init.headers)
@@ -59,13 +68,19 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res = await fetch(path, { ...init, headers })
 
   if (res.status === 401 && !path.includes('/api/auth/')) {
-    const refreshed = await refreshIfPossible()
-    if (refreshed) {
-      headers.set('Authorization', `Bearer ${refreshed}`)
-      res = await fetch(path, { ...init, headers })
-    } else {
+    if (isLegacy) {
+      const refreshed = await legacyRefreshIfPossible()
+      if (refreshed) {
+        headers.set('Authorization', `Bearer ${refreshed}`)
+        res = await fetch(path, { ...init, headers })
+      } else {
+        useAuth.getState().clear()
+        legacyRedirectToLogin()
+      }
+    } else if (!keycloakIsAuthPage()) {
       useAuth.getState().clear()
-      redirectToLogin()
+      const { pathname, search } = window.location
+      login(pathname + search)
     }
   }
 

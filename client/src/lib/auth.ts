@@ -1,30 +1,11 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { useAuth as useKeycloakAuth } from './auth.keycloak'
+import { useAuth as useLegacyAuth } from './auth.legacy'
 
-export type UserSummary = {
-  id: number
-  email: string
-  displayName: string
-  role: string
-}
+export type { UserSummary } from './auth.keycloak'
 
-type AuthState = {
-  accessToken: string | null
-  refreshToken: string | null
-  user: UserSummary | null
-  setTokens: (a: string, r: string, u: UserSummary) => void
-  clear: () => void
-}
+const isLegacy = import.meta.env.VITE_AUTH_PROVIDER === 'legacy'
 
-export const useAuth = create<AuthState>()(
-  persist(
-    (set) => ({
-      accessToken: null,
-      refreshToken: null,
-      user: null,
-      setTokens: (accessToken, refreshToken, user) => set({ accessToken, refreshToken, user }),
-      clear: () => set({ accessToken: null, refreshToken: null, user: null }),
-    }),
-    { name: 'amc-portal-auth' },
-  ),
-)
+// 두 구현 모두 accessToken/user/clear()를 공통으로 제공한다.
+// legacy 전용 필드(refreshToken/setTokens)가 필요한 곳(lib/api.ts, LegacyLoginPage)은
+// './auth.legacy'를 직접 import해서 쓴다.
+export const useAuth = (isLegacy ? useLegacyAuth : useKeycloakAuth) as typeof useKeycloakAuth

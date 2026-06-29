@@ -1,13 +1,21 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
 import { api } from '@/lib/api'
+import { logout as keycloakLogout } from '@/lib/keycloak'
 import clsx from 'clsx'
 
+const isLegacyAuth = import.meta.env.VITE_AUTH_PROVIDER === 'legacy'
+
 export default function Navbar() {
-  const { user, clear } = useAuth()
+  const user = useAuth((s) => s.user)
+  const clear = useAuth((s) => s.clear)
   const navigate = useNavigate()
 
   const logout = async () => {
+    if (!isLegacyAuth) {
+      keycloakLogout()
+      return
+    }
     try {
       await api<void>('/api/auth/logout', { method: 'POST' })
     } catch {
@@ -63,12 +71,14 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login" className="btn-ghost">
+              <Link to="/login" className={isLegacyAuth ? 'btn-ghost' : 'btn-primary'}>
                 로그인
               </Link>
-              <Link to="/signup" className="btn-primary">
-                회원가입
-              </Link>
+              {isLegacyAuth && (
+                <Link to="/signup" className="btn-primary">
+                  회원가입
+                </Link>
+              )}
             </>
           )}
         </div>
