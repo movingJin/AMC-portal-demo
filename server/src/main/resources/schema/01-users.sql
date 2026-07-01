@@ -1,6 +1,6 @@
 -- users
 CREATE TABLE IF NOT EXISTS portal.users (
-    id             BIGSERIAL PRIMARY KEY,
+    id             BIGSERIAL    PRIMARY KEY,
     keycloak_id    VARCHAR(64)  UNIQUE,
     email          VARCHAR(255) NOT NULL UNIQUE,
     display_name   VARCHAR(100) NOT NULL,

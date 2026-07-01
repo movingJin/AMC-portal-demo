@@ -10,7 +10,7 @@ DO $$
 DECLARE
     t TEXT;
 BEGIN
-    FOR t IN SELECT unnest(ARRAY['users', 'board_masters', 'boards', 'comments']) LOOP
+    FOR t IN SELECT unnest(ARRAY['users', 'board_masters', 'boards', 'comments', 'projects']) LOOP
         EXECUTE format('
             DROP TRIGGER IF EXISTS trg_%s_updated_at ON portal.%s;
             CREATE TRIGGER trg_%s_updated_at BEFORE UPDATE ON portal.%s

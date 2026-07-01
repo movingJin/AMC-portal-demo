@@ -51,8 +51,8 @@ export default function Navbar() {
             <NavLink to="/board/1" className={navItem}>
               테스트 게시판
             </NavLink>
-            <NavLink to="/board/2" className={navItem}>
-              공지사항
+            <NavLink to="/projects" className={navItem}>
+              프로젝트 관리
             </NavLink>
           </div>
         </div>

@@ -23,7 +23,7 @@ export default function HomePage() {
             <Link to="/chatbot" className="btn-primary">
               데이터 챗봇 시작
             </Link>
-            <Link to="/board" className="btn-secondary">
+            <Link to="/board-master" className="btn-secondary">
               게시판 보기
             </Link>
           </div>
@@ -32,7 +32,7 @@ export default function HomePage() {
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FeatureCard
-          to="/board"
+          to="/board-master"
           title="게시판"
           desc="공지·논의·공유 게시글과 댓글을 한 곳에서."
           icon={

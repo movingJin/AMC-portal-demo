@@ -13,6 +13,7 @@ import NewBoardPage from '@/pages/board/NewBoardPage'
 import ChatbotPage from '@/pages/chatbot/ChatbotPage'
 import BoardMasterListPage from '@/pages/board/BoardMasterListPage'
 import NewBoardMasterPage from '@/pages/board/NewBoardMasterPage'
+import ProjectListPage from '@/pages/project/ProjectListPage'
 
 const isLegacyAuth = import.meta.env.VITE_AUTH_PROVIDER === 'legacy'
 
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/board-master" element={<BoardMasterListPage />} />
           <Route path="/board-master/new" element={<NewBoardMasterPage />} />
           <Route path="/board-master/:id/edit" element={<NewBoardMasterPage />} />
+          <Route path="/projects" element={<ProjectListPage />} />
           <Route
             path="*"
             element={
